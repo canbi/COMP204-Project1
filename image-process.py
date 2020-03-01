@@ -1,88 +1,163 @@
-from PIL import *
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont, ImageTk
 import numpy as np
-import cv2
 import sys
 import math
+import tkinter as tk
+from tkinter import filedialog, messagebox, LEFT,RIGHT,TOP
+
+top = tk.Tk()  # creates window
+top.geometry('600x300+400+300')
+top.title('Catch All ImageZ')
+filename= ''
 
 def main():
 
-    img = Image.open('font1.png') #fotoğrafı açıyor
-    img_gray = img.convert('L') # converts the image to grayscale image
+    global v
+    global m
+    B = tk.Button(top, text="Select Image", command=ButtonEvent).place(x=50,y=50)
+    C = tk.Button(top, text="Find Characters", command=ButtonEvent2).place(x=410,y=250)
+
+    v = tk.IntVar()
+    v.set(1)  # initializing the choice, i.e. Hu Moment
+    rad1= tk.Radiobutton(text='Hu Moment',variable=v,value=1).place(x=430,y=50)
+    rad2= tk.Radiobutton(text='R Moment',variable=v, value=2).place(x=430, y=80)
+    rad3= tk.Radiobutton(text='Zernike Moment',variable=v, value=3).place(x=430,y=110)
+
+    m = tk.IntVar()
+    m.set(1)  # initializing the choice, i.e. First
+    rad4= tk.Radiobutton(text='Comparison Method 1',variable=m,value=1).place(x=400,y=160)
+    rad5= tk.Radiobutton(text='Comparison Method 2',variable=m,value=2).place(x=400,y=190)
+    rad6= tk.Radiobutton(text='Comparison Method 3',variable=m,value=3).place(x=400,y=220)
+
+
+
+    # button
+    #imageOperations(filename)
+
+
+    top.mainloop()
+
+
+
+    #img = Image.open('font1.png') #fotoğrafı açıyor
+
+def ButtonEvent():
+
+
+
+   global img1
+   global filename
+   top.filename = filedialog.askopenfilename(initialdir="/", title="Select file",
+                                             filetypes=(("png files", "*.png"),("jpeg files", "*.jpg"),("all files", "*.*")))
+   filename = top.filename
+   print(filename)
+   image = Image.open(filename)
+   width, height = image.size
+   if width > height:
+
+       if width > 370:
+         coef = 370/width
+         width = 370
+         height *=coef
+   elif height>width:
+     if height >180:
+         coef =180/height
+         height=180
+         width *=coef
+
+   image = image.resize((round(width),round(height)), Image.ANTIALIAS)
+   img1 = ImageTk.PhotoImage(image)  # image
+
+   panel = tk.Label(top, image=img1).place(x=20,y=100)
+   #panel.pack(side="bottom", fill="both", expand="no")
+   #imageOperations(top.filename)
+
+def ButtonEvent2():
+
+    try:
+        img = Image.open(filename)  # fotoğrafı açıyor
+    except AttributeError:
+        messagebox.showinfo( "Warning", "Please select image.")
+    img_gray = img.convert('L')  # converts the image to grayscale image
 
     ONE = 255
     a = np.asarray(img_gray)  # from PIL to np array
     a_bin = threshold(a, 100, ONE, 0)
     im = Image.fromarray(a_bin)  # from np array to PIL format
-
-    #RENKLENDİRME VE LABEL
     label = blob_coloring_8_connected(a_bin, ONE)
     new_img2 = np2PIL_color(label)
-    new_img2.show()
-
-    #DİKDÖRTGEN
     labelDict = addDictLabelled(label)
-    #print("LabelDict")
-    #print(labelDict)
     recAtt = findRectangle(label, labelDict)
-    #print("-**-*-*-*-*-*-*-*-*-*")
-    #print("RecAtt")
-    #print(recAtt)
-
-    #DİKDÖRTGENLERİ ÇİZ
-    drawingRect(img,recAtt)
-
-    #CROP AND RESIZE
+    drawingRect(img, recAtt)
     numberOfLabels = len(labelDict)
-    numberOfMoments = 7 #HU İÇİN 7
-    featureVectors = np.empty(shape=(numberOfLabels, numberOfMoments), dtype=np.double)  # FeatureVectors Array Initialization
-    for i in range(numberOfLabels):
-        minx = recAtt[0][i]
-        miny = recAtt[1][i]
-        maxx = recAtt[2][i]
-        maxy = recAtt[3][i]
+    type = ""
+    if v.get() == 1:
+        type = "Hu"
+        numberOfMoments = 7  # HU İÇİN 7
+        featureVectors = np.empty(shape=(numberOfLabels, numberOfMoments),
+                                  dtype=np.double)  # FeatureVectors Array Initialization
+        for i in range(numberOfLabels):
+            minx = recAtt[0][i]
+            miny = recAtt[1][i]
+            maxx = recAtt[2][i]
+            maxy = recAtt[3][i]
 
-        resizedIm = resizeRec(im, minx, miny, maxx, maxy)  #crops and resizes every character
+            resizedIm = resizeRec(im, minx, miny, maxx, maxy)  # crops and resizes every character
 
-        #CALCULATION HU MOMENTS
-        currentMoments = calcMomentsHu(resizedIm)  #calculates HU moments of character
-        featureVectors[i] = currentMoments  #stores hu moments of character
-        np.set_printoptions(threshold=sys.maxsize)
-        #print(featureVectors)
+            # CALCULATION HU MOMENTS
+            currentMoments = calcMomentsHu(resizedIm)  # calculates HU moments of character
+            featureVectors[i] = currentMoments  # stores hu moments of character
 
+    if v.get() == 2:
+        type = "R"
+        numberOfMoments = 10  # R İÇİN
+        featureVectors = np.empty(shape=(numberOfLabels, numberOfMoments),
+                                  dtype=np.double)  # FeatureVectors Array Initialization
+        for i in range(numberOfLabels):
+            minx = recAtt[0][i]
+            miny = recAtt[1][i]
+            maxx = recAtt[2][i]
+            maxy = recAtt[3][i]
 
-        #huMomentSource = loadHuSources()
+            resizedIm = resizeRec(im, minx, miny, maxx, maxy)  # crops and resizes every character
 
-    #np.save('font7hu',featureVectors) #SOURCE KAYIT
+            # CALCULATION HU MOMENTS
+            currentMoments = calcMomentsR(resizedIm)  # calculates R moments of character
+            featureVectors[i] = currentMoments  # stores R moments of character
 
-    #print("num: ", numberOfLabels)
+    if v.get() == 3:
+        type = "Zernike"
+        numberOfMoments = 12
+        featureVectors = np.empty(shape=(numberOfLabels, numberOfMoments),
+                                  dtype=np.double)  # FeatureVectors Array Initialization
 
+        for i in range(numberOfLabels):
+            minx = recAtt[0][i]
+            miny = recAtt[1][i]
+            maxx = recAtt[2][i]
+            maxy = recAtt[3][i]
 
-    #MANUAL COMPARING
-    huMomentSource = np.load('font2hu.npy')  #SOURCE LOAD
-    a = compareMomentsVER2(featureVectors, huMomentSource, recAtt)
-    print(a)
-    print("*********")
+            resizedIm = resizeRec(im, minx, miny, maxx, maxy)  # crops and resizes every character
 
+            # CALCULATION HU MOMENTS
+            currentMoments = calcMomentsZernike(resizedIm)  # calculates HU moments of character
+            featureVectors[i] = currentMoments  # stores hu moments of character
 
-    multipleComparison(featureVectors,recAtt)
-
-
-
-
-
-
-
-
-
+    # np.save('sourceZernike9',featureVectors) #SOURCE KAYIT
+    results=0
+    if m.get() == 1:
+        results = multipleComparison(featureVectors, recAtt, type)
+    if m.get() == 2:
+        results = multipleComparison2(featureVectors, recAtt, type)
+    if m.get() == 3:
+        results = multipleComparison3(featureVectors, recAtt, type)
+    writeAssumptions(recAtt, img, results)
 
 def np2PIL(im):
-    print("size of arr: ",im.shape)
     img = Image.fromarray(im, 'RGB')
     return img
 
 def np2PIL_color(im):
-    print("size of arr: ",im.shape)
     img = Image.fromarray(np.uint8(im))
     return img
 
@@ -101,7 +176,6 @@ def blob_coloring_8_connected(bim, ONE):
     max_label = int(10000)
     nrow = bim.shape[0]
     ncol = bim.shape[1]
-    #print("nrow, ncol", nrow, ncol)
     im = np.zeros(shape=(nrow,ncol), dtype = int)
     a = np.zeros(shape=max_label, dtype = int)
     a = np.arange(0,max_label, dtype = int)
@@ -225,7 +299,6 @@ def addDictLabelled2(labelDict):
     labelDict2 = {}
     numberOfLabels = 0
     for i in labelDict:
-        #print("i: ", i)
         labelDict2[i] = numberOfLabels
         numberOfLabels += 1
 
@@ -269,16 +342,32 @@ def drawingRect(img,recAtt):
     for j in range(ncol):
         draw = ImageDraw.Draw(img)
         shape = [(recAtt[3][j], recAtt[0][j]),(recAtt[1][j], recAtt[2][j])]
-        #print(shape)
         # create rectangle image
         img1 = ImageDraw.Draw(img)
         img1.rectangle(shape, outline="red", width=1)
-    img.show()
 
 def resizeRec(im,minx,miny,maxx,maxy):
     im2 = im.crop((miny, minx, maxy, maxx))
     im3 = im2.resize((21, 21))
+    #im3.show()
     return im3
+
+def writeAssumptions(recAtt,img, results):
+    nrow = recAtt.shape[0]
+    ncol = recAtt.shape[1]
+    for j in range(ncol):
+        x1 = recAtt[1][j]
+        y1 = recAtt[0][j]
+        x2 = recAtt[3][j]
+        y2 = recAtt[2][j]
+        # create rectangle image
+        txt = Image.new('RGBA', img.size, (255, 255, 255, 0))
+        fnt = ImageFont.truetype('Pillow/Tests/fonts/FreeMono.ttf', 25)
+        d = ImageDraw.Draw(txt)
+        d.text(((x1 + x2 -15) / 2, y1-22), str(results[j]), font=fnt, fill=(0, 0, 0, 255))
+        img = Image.alpha_composite(img, txt)
+
+    img.show()
 
 def calcMomentsHu(resizedIm):
     f = np.asarray(resizedIm)
@@ -339,298 +428,340 @@ def calcMomentsHu(resizedIm):
            ((3 * pow((normalizedCentral[3][0] + normalizedCentral[1][2]), 2)) - (
            (pow((normalizedCentral[2][1] + normalizedCentral[0][3]), 2)))))
 
-    '''print("H1 : " , H1)
-    print("H2 : " , H2)
-    print("H3 : " , H3)
-    print("H4 : " , H4)
-    print("H5 : " , H5)
-    print("H6 : " , H6)
-    print("H7 : " , H7)
-
-    moments = cv2.moments(f)
-    huMoments = cv2.HuMoments(moments)
-
-    print("----------------")
-    print(huMoments)'''
-
     return [H1, H2, H3, H4, H5, H6, H7]
 
-def compareMoments(featureVectors, huMomentSource,recAtt,img):
-    numberOfSource = huMomentSource.shape[0]
-    numberOfMoments = huMomentSource.shape[2]
-    characterOfSource = huMomentSource.shape[1]
+def calcMomentsR(resizedIm):
+    huMoments = calcMomentsHu(resizedIm)
+
+    r1 = math.sqrt(huMoments[1])/huMoments[0]
+    r2 = (huMoments[0] + math.sqrt(huMoments[1]))/(huMoments[0] - math.sqrt(huMoments[1]))
+    r3 = math.sqrt(huMoments[2])/math.sqrt(huMoments[3])
+    r4 = math.sqrt(huMoments[2])/math.sqrt(abs(huMoments[4]))
+    r5 = math.sqrt(huMoments[3])/math.sqrt(abs(huMoments[4]))
+    r6 = abs(huMoments[5])/(huMoments[0]*huMoments[2])
+    r7 = abs(huMoments[5])/(huMoments[0]*math.sqrt(abs(huMoments[4])))
+    r8 = abs(huMoments[5])/(huMoments[2]*math.sqrt(abs(huMoments[1])))
+    r9 = abs(huMoments[5])/math.sqrt(huMoments[1]*abs(huMoments[4]))
+    r10 = abs(huMoments[4])/(huMoments[2]*huMoments[3])
+
+    return [r1,r2,r3,r4,r5,r6,r7,r8,r9,r10]
+
+def calcMomentsZernike(resizedIm):
+    z11 = math.sqrt(pow(zernikeZRnm(resizedIm,1,1),2)+pow(zernikeZInm(resizedIm,1,1),2))
+    z22 = math.sqrt(pow(zernikeZRnm(resizedIm,2,2),2)+pow(zernikeZInm(resizedIm,2,2),2))
+    z31 = math.sqrt(pow(zernikeZRnm(resizedIm,3,1),2)+pow(zernikeZInm(resizedIm,3,1),2))
+    z33 = math.sqrt(pow(zernikeZRnm(resizedIm,3,3),2)+pow(zernikeZInm(resizedIm,3,3),2))
+    z42 = math.sqrt(pow(zernikeZRnm(resizedIm,4,2),2)+pow(zernikeZInm(resizedIm,4,2),2))
+    z44 = math.sqrt(pow(zernikeZRnm(resizedIm,4,4),2)+pow(zernikeZInm(resizedIm,4,4),2))
+    z51 = math.sqrt(pow(zernikeZRnm(resizedIm,5,1),2)+pow(zernikeZInm(resizedIm,5,1),2))
+    z53 = math.sqrt(pow(zernikeZRnm(resizedIm,5,3),2)+pow(zernikeZInm(resizedIm,5,3),2))
+    z55 = math.sqrt(pow(zernikeZRnm(resizedIm,5,5),2)+pow(zernikeZInm(resizedIm,5,5),2))
+    z62 = math.sqrt(pow(zernikeZRnm(resizedIm,6,3),2)+pow(zernikeZInm(resizedIm,6,2),2))
+    z64 = math.sqrt(pow(zernikeZRnm(resizedIm,6,4),2)+pow(zernikeZInm(resizedIm,6,4),2))
+    z66 = math.sqrt(pow(zernikeZRnm(resizedIm,6,6),2)+pow(zernikeZInm(resizedIm,6,6),2))
+
+    return [z11,z22,z31,z33,z42,z44,z51,z53,z55,z62,z64,z66]
+
+def zernikeRnm(n,m,pij):
+    rnm = 0
+    for i in range(int((n-abs(m))/2)):
+        rnm += (pow(-1,i)*pow(pij,(n-2*i))*math.factorial(n-i))/(math.factorial(i)*math.factorial(int(((n+abs(m))/2)-i))*math.factorial(int(((n-abs(m))/2))-i))
+
+    return rnm
+
+def zernikeZRnm(resizedIm, n, m):
+    f = np.asarray(resizedIm)
+    nrow = f.shape[0]
+    ncol = f.shape[1]
+
+    zr = 0
+
+    for i in range(nrow):
+        for j in range(ncol):
+            xi = ((math.sqrt(2)/(nrow-1))*i) - 1/math.sqrt(2)
+            yj = ((math.sqrt(2)/(nrow-1))*j) - 1/math.sqrt(2)
+            pij = math.sqrt(pow(xi,2)+pow(yj,2))
+            try:
+                qij = math.atan(yj/xi)
+            except ZeroDivisionError:
+                qij = 0
+
+            zr += f[i][j]*zernikeRnm(n,m,pij)*math.cos(m*qij)*pow(2/(nrow*math.sqrt(2)),2)
+    zr *= (n+1)/math.pi
+
+    return zr
+
+def zernikeZInm(resizedIm, n, m):
+    f = np.asarray(resizedIm)
+    nrow = f.shape[0]
+    ncol = f.shape[1]
+
+    zi = 0
+
+    for i in range(nrow):
+        for j in range(ncol):
+            xi = ((math.sqrt(2) / (nrow - 1)) * i) - 1 / math.sqrt(2)
+            yj = ((math.sqrt(2) / (nrow - 1)) * j) - 1 / math.sqrt(2)
+            pij = math.sqrt(pow(xi,2)+pow(yj,2))
+            try:
+                qij = math.atan(yj/xi)
+            except ZeroDivisionError:
+                qij = 0
+            zi += f[i][j]*zernikeRnm(n,m,pij)*math.sin(m*qij)*pow(2/(nrow*math.sqrt(2)),2)
+    zi *= -(n+1)/math.pi
+
+    return zi
+
+def multipleComparison(featureVectors,recAtt,type):
+    numberOfSource = 10
     numberOfLabel = featureVectors.shape[0]
-    numberOfHuMoment = featureVectors.shape[1]
-
-    # Scaling Hu Moments with Log
-    for i in range(numberOfSource):
-        for j in range(characterOfSource):
-            for k in range(numberOfMoments):
-                #huMomentSource[i][j][k] = -np.sign(huMomentSource[i][j][k])* np.log10(np.abs(huMomentSource[i][j][k]))
-                huMomentSource[i][j][k] = np.log10(abs(huMomentSource[i][j][k]))
-
-
-    for i in range(numberOfLabel):
-        for j in range(numberOfMoments):
-            #featureVectors[i][j] = -np.sign(featureVectors[i][j])* np.log10(np.abs(featureVectors[i][j]))
-            featureVectors[i][j] = np.log10(abs(featureVectors[i][j]))
-
-    '''# Scaling Hu Moments with Log
-    for i in range(numberOfSource):
-        for j in range(characterOfSource):
-            for k in range(numberOfMoments):
-                huMoments[i] = -1 * copysign(1.0, huMoments[i]) * log10(abs(huMoments[i])))'''
-
-
-    #for a in range(numberOfLabel): #for feature vectors
-    comparisonResults2 = np.zeros(shape=(numberOfLabel), dtype=int)
-    for a in range(numberOfLabel): #for feature vectors
-        comparisonResults = np.zeros(shape=(characterOfSource), dtype=int)
-        distances = np.empty(shape=(characterOfSource), dtype=np.double)
-        comparisonResults1 = np.zeros(shape=(characterOfSource), dtype=int)
-        minIndex = -1
-        maxIndex = -1
-        for i in range(numberOfSource): #for font file number
-            for j in range(characterOfSource): # for characters features
-                print("*****************")
-                print("a: ", a," i: ", i," j: ", j)
-                huMoments = featureVectors[a] #karşılaştırmak istediğimiz label'ın tüm hu'ları burada [h1,h2,h3,h4,h5,h6,h7]
-                sourceCharacters = huMomentSource[i] #font number i'deki tüm characterler
-                sourceCharMoments = sourceCharacters[j] #bir source karakterinin momentleri
-                '''print("huMoments[0]: " ,huMoments[0])
-                print("huMoments[1]: " ,huMoments[1])
-                print("sourceCharMoments[0]: ", sourceCharMoments[0])
-                print("sourceCharMoments[1]: ", sourceCharMoments[1])'''
-
-                dis1 = pow(huMoments[0] - sourceCharMoments[0],2)
-                dis2 = pow(huMoments[1] - sourceCharMoments[1],2)
-                dis3 = pow(huMoments[2] - sourceCharMoments[2],2)
-                dis4 = pow(huMoments[3] - sourceCharMoments[3],2)
-                dis5 = pow(huMoments[4] - sourceCharMoments[4],2)
-                dis6 = pow(huMoments[5] - sourceCharMoments[5],2)
-                dis7 = pow(huMoments[6] - sourceCharMoments[6],2)
-                '''print("Dis1: ",dis1)
-                print("Dis2: ",dis2)
-                print("Dis3: ",dis3)
-                print("Dis4: ",dis4)
-                print("Dis5: ",dis5)
-                print("Dis6: ",dis6)
-                print("Dis7: ",dis7)'''
-
-
-                totalDis = dis1+dis2+dis3+dis4+dis5+dis6+dis6
-                totalDis = math.sqrt(totalDis)
-                distances[j] = totalDis
-                #print("bulunan distance:  " , distances[j])
-            #find lowest distance and put this into comparison result array
-
-            min = distances[0]
-            minIndex = 0
-            for p in range(characterOfSource-1):
-                if distances[p+1] < min:
-                    min = distances[p+1]
-                    minIndex = p+1
-            #comparisonResults[j] = minIndex
-
-            #print("En küçük distance: ", min, " index'i ", minIndex)
-
-            #print("Comparison Results: ")
-            #print(comparisonResults)
-            #print("**************")
-
-
-            #find most frequent number and it assign to comparison result2 array with index a
-            comparisonResults1[minIndex] = 1 + comparisonResults1[minIndex]
-
-        #for t in range(characterOfSource):
-        #    comparisonResults1[comparisonResults[t]] = 1 + comparisonResults1[comparisonResults[t]]
-        '''print("**************")
-        print("comparisonResults1 array. Sıklık:")
-        print(comparisonResults1)'''
-        #find maximum number and its index will be found character
-        max = comparisonResults1[0]
-        maxIndex = 0
-        for l in range(characterOfSource):
-            if comparisonResults1[l] > max:
-                max = comparisonResults1[l]
-                maxIndex = l
-        comparisonResults2[a] = maxIndex
-
-    print(comparisonResults2)
-    #ekrana yazı yaz
-    alignment = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
-                 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
-
-    nrow = recAtt.shape[0]
-    ncol = recAtt.shape[1]
-
-    for j in range(ncol):
-        x1=recAtt[2][j]
-        y1=recAtt[1][j]
-        x2=recAtt[4][j]
-        y2=recAtt[3][j]
-        # print(shape)
-        # create rectangle image
-        txt = Image.new('RGBA', img.size, (255, 255, 255, 0))
-        #img1.rectangle(shape, outline="red")
-        #font = ImageFont.load("arial.tff")
-        #font = ImageFont.truetype("arial.tff", 15)
-        fnt = ImageFont.truetype('Pillow/Tests/fonts/FreeMono.ttf', 40)
-        d = ImageDraw.Draw(txt)
-        d.text(((x1+x2-20)/2, y1-20), str(alignment[comparisonResults2[j]]), font=fnt, fill=(0, 0, 0, 255))
-        #img1.draw.text((x1+x2)/2, (y1+y2)/2, comparisonResults2[j], font=font)
-        img = Image.alpha_composite(img, txt)
-
-    img.show()
-
-
-
-    return comparisonResults2
-
-
-def multipleComparison(featureVectors,recAtt):
-    numberOfSource = 7
-    allAssumptions = np.zeros(shape=(numberOfSource,featureVectors.shape[0]), dtype=int)
-    for i in range(numberOfSource):
-        filename = "font" + str(i+1) + "hu.npy"
-        print("filename is. " ,filename)
-        huMomentSource = np.load(filename)  # SOURCE LOAD
-        print("source")
-        print(huMomentSource)
-        print("**")
-
-        '''# LOG Transformation
-        # Scaling Hu Moments with Log
-        for k in range(huMomentSource.shape[0]):
-            for l in range(huMomentSource.shape[1]):
-                #huMomentSource[k][l] = np.log10(abs(huMomentSource[k][l]))
-                huMomentSource[k][l] = -np.sign(huMomentSource[k][l])* np.log10(np.abs(huMomentSource[k][l]))
-
-        for k in range(featureVectors.shape[0]):
-            for l in range(featureVectors.shape[1]):
-                #featureVectors[k][l] = np.log10(abs(featureVectors[k][l]))
-                featureVectors[k][l] = -np.sign(featureVectors[k][l])* np.log10(np.abs(featureVectors[k][l]))'''
-
-        oneFontResults = compareMomentsVER2(featureVectors, huMomentSource, recAtt) #sadece 1 source karşılaşma sonuçları
-        print(oneFontResults)
-        allAssumptions[i] = oneFontResults
-
-    print(allAssumptions)
-
-
-def compareMomentsVER2(featureVectors, huMomentSource,recAtt):
-    #numberOfSource = huMomentSource.shape[0]
-    #print("number of source: ", numberOfSource)
-    characterOfSource = huMomentSource.shape[0]
-    #print("number of characters in source: " , characterOfSource)
-    numberOfMoments = huMomentSource.shape[1]
-    #print("number of moments in source: ", numberOfMoments)
-    numberOfLabel = featureVectors.shape[0]
-    #print("number of label: ", numberOfLabel)
-    numberOfHuMoment = featureVectors.shape[1]
-    #print("number of hu moment: ",numberOfHuMoment)
+    numberOfMoment = featureVectors.shape[1]
     alignment = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+
+    # LOG Transformation
+    # Scaling Moments with Log
+    for k in range(numberOfLabel):
+        for l in range(numberOfMoment):
+            if featureVectors[k][l] != 0:
+                featureVectors[k][l] = -np.sign(featureVectors[k][l]) * np.log10(np.abs(featureVectors[k][l]))
+
     mostRelevant = np.empty(shape=(numberOfLabel), dtype=int)
-
-    '''#LOG Transformation
-    # Scaling Hu Moments with Log
-    for i in range(characterOfSource):
-        for j in range(numberOfMoments):
-            #huMomentSource[i][j] = np.log10(abs(huMomentSource[i][j]))
-            huMomentSource[i][j] = -np.sign(huMomentSource[i][j])* np.log10(np.abs(huMomentSource[i][j]))
-
     for i in range(numberOfLabel):
-        for j in range(numberOfHuMoment):
-            #featureVectors[i][j] = np.log10(abs(featureVectors[i][j]))
-            featureVectors[i][j] = -np.sign(featureVectors[i][j])* np.log10(np.abs(featureVectors[i][j]))'''
+        distances = np.empty(shape=(numberOfLabel,numberOfSource), dtype=np.double)
 
-    for i in range(numberOfLabel):
-        distances = np.empty(shape=(characterOfSource), dtype=np.double)
-        for j in range(characterOfSource):
-            '''print("*****************")
-            print(" i: ", i, " j: ", j)'''
-            '''print("huMomentSource[0]: " ,huMomentSource[j][0])
-            print("huMomentSource[1]: " ,huMomentSource[j][1])
-            print("sourceCharMoments[0]: ", featureVectors[i][0])
-            print("sourceCharMoments[1]: ", featureVectors[i][1])'''
+        for j in range(numberOfSource):
+            filename = "Database/source" + type + str(j) + ".npy"
+            momentSource = np.load(filename)  # SOURCE LOAD
+            characterOfSource = momentSource.shape[0]
+            numberOfMoments = momentSource.shape[1]
 
-            '''dis1 = pow(huMomentSource[j][0] - featureVectors[i][0], 2)
-            dis2 = pow(huMomentSource[j][1] - featureVectors[i][1], 2)
-            dis3 = pow(huMomentSource[j][2] - featureVectors[i][2], 2)
-            dis4 = pow(huMomentSource[j][3] - featureVectors[i][3], 2)
-            dis5 = pow(huMomentSource[j][4] - featureVectors[i][4], 2)
-            dis6 = pow(huMomentSource[j][5] - featureVectors[i][5], 2)
-            dis7 = pow(huMomentSource[j][6] - featureVectors[i][6], 2)'''
+            #LOG Transformation
+            for k in range(characterOfSource):
+                for l in range(numberOfMoments):
+                    if momentSource[k][l] != 0:
+                        momentSource[k][l] = -np.sign(momentSource[k][l]) * np.log10(np.abs(momentSource[k][l]))
 
-            ratio1 = ((huMomentSource[j][0] - featureVectors[i][0])/huMomentSource[j][0])*100
-            ratio2 = ((huMomentSource[j][1] - featureVectors[i][1])/huMomentSource[j][1])*100
-            ratio3 = ((huMomentSource[j][2] - featureVectors[i][2])/huMomentSource[j][2])*100
-            ratio4 = ((huMomentSource[j][3] - featureVectors[i][3])/huMomentSource[j][3])*100
-            ratio5 = ((huMomentSource[j][4] - featureVectors[i][4])/huMomentSource[j][4])*100
-            ratio6 = ((huMomentSource[j][5] - featureVectors[i][5])/huMomentSource[j][5])*100
-            ratio7 = ((huMomentSource[j][6] - featureVectors[i][6])/huMomentSource[j][6])*100
+            distances0 = np.zeros(shape=(characterOfSource), dtype=np.double)
+
+            for k in range(characterOfSource):
+                if type == "Hu":
+                    dis1 = pow(momentSource[k][0] - featureVectors[i][0], 2)
+                    dis2 = pow(momentSource[k][1] - featureVectors[i][1], 2)
+                    dis3 = pow(momentSource[k][2] - featureVectors[i][2], 2)
+                    dis4 = pow(momentSource[k][3] - featureVectors[i][3], 2)
+                    dis5 = pow(momentSource[k][4] - featureVectors[i][4], 2)
+                    dis6 = pow(momentSource[k][5] - featureVectors[i][5], 2)
+                    dis7 = pow(momentSource[k][6] - featureVectors[i][6], 2)
+
+                    totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis7
+                    totalDis = math.sqrt(totalDis)
+                    distances0[k] = totalDis
+
+                if type == "R":
+                    dis1 = pow(momentSource[k][0] - featureVectors[i][0], 2)
+                    dis2 = pow(momentSource[k][1] - featureVectors[i][1], 2)
+                    dis3 = pow(momentSource[k][2] - featureVectors[i][2], 2)
+                    dis4 = pow(momentSource[k][3] - featureVectors[i][3], 2)
+                    dis5 = pow(momentSource[k][4] - featureVectors[i][4], 2)
+                    dis6 = pow(momentSource[k][5] - featureVectors[i][5], 2)
+                    dis7 = pow(momentSource[k][6] - featureVectors[i][6], 2)
+                    dis8 = pow(momentSource[k][7] - featureVectors[i][7], 2)
+                    dis9 = pow(momentSource[k][8] - featureVectors[i][8], 2)
+                    dis10 = pow(momentSource[k][9] - featureVectors[i][9], 2)
+
+                    totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis7 + dis8 + dis9 + dis10
+                    totalDis = math.sqrt(totalDis)
+                    distances0[k] = totalDis
 
 
-            '''print("Dis1: ",dis1)
-            print("Dis2: ",dis2)
-            print("Dis3: ",dis3)
-            print("Dis4: ",dis4)
-            print("Dis5: ",dis5)
-            print("Dis6: ",dis6)
-            print("Dis7: ",dis7)'''
+                if type == "Zernike":
+                    dis1 = pow(momentSource[k][0] - featureVectors[i][0], 2)
+                    dis2 = pow(momentSource[k][1] - featureVectors[i][1], 2)
+                    dis3 = pow(momentSource[k][2] - featureVectors[i][2], 2)
+                    dis4 = pow(momentSource[k][3] - featureVectors[i][3], 2)
+                    dis5 = pow(momentSource[k][4] - featureVectors[i][4], 2)
+                    dis6 = pow(momentSource[k][5] - featureVectors[i][5], 2)
+                    dis7 = pow(momentSource[k][6] - featureVectors[i][6], 2)
+                    dis8 = pow(momentSource[k][7] - featureVectors[i][7], 2)
+                    dis9 = pow(momentSource[k][8] - featureVectors[i][8], 2)
+                    dis10 = pow(momentSource[k][9] - featureVectors[i][9], 2)
+                    dis11 = pow(momentSource[k][10] - featureVectors[i][10], 2)
+                    dis12 = pow(momentSource[k][11] - featureVectors[i][11], 2)
 
-            ''''totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis6
-            totalDis = math.sqrt(totalDis)'''
-            #print("total distance is: ",totalDis)
-            #distances[j] = totalDis
+                    totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis7 + dis8 + dis9 + dis10 + dis11 + dis12
+                    totalDis = math.sqrt(totalDis)
+                    distances0[k] = totalDis
 
-            totalRatio= ratio1+ratio2+ratio3+ratio4+ratio5+ratio6+ratio7
-            distances[j] = totalRatio
-
-
-        #bir i değeri için tüm j değerleri gezildi.
-
-        print(distances)
-        #find lowest distance and put this into comparison result array
-        min = 10000
-        minIndex = -1
-        for p in range(characterOfSource):
-            if distances[p] < min:
-                min = distances[p]
-                minIndex = p
-        #print("minindex: ", minIndex)
-
-        mostRelevant[i] = alignment[minIndex]
-
-    print(".-*-.-*-.-*-.-*")
-    print(mostRelevant)
-    print(".-*-.-*-.-*-.-*")
-
+            distances[i][j] = sum(distances0)/len(distances0)
+        mostRelevant[i] = alignment[np.argmin(distances[i])]
     return mostRelevant
 
+def multipleComparison2(featureVectors,recAtt,type):
+    numberOfSource = 10
+    numberOfLabel = featureVectors.shape[0]
+    numberOfMoment = featureVectors.shape[1]
+    alignment = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
-'''def writeAssumptions(recAtt,img, TAHMİNLERARRAY):
-    nrow = recAtt.shape[0]
-    ncol = recAtt.shape[1]
-    for j in range(ncol):
-        x1 = recAtt[2][j]
-        y1 = recAtt[1][j]
-        x2 = recAtt[4][j]
-        y2 = recAtt[3][j]
-        # print(shape)
-        # create rectangle image
-        txt = Image.new('RGBA', img.size, (255, 255, 255, 0))
-        # img1.rectangle(shape, outline="red")
-        # font = ImageFont.load("arial.tff")
-        # font = ImageFont.truetype("arial.tff", 15)
-        fnt = ImageFont.truetype('Pillow/Tests/fonts/FreeMono.ttf', 40)
-        d = ImageDraw.Draw(txt)
-        d.text(((x1 + x2 - 20) / 2, y1 - 20), ????, font=fnt, fill=(0, 0, 0, 255))
-        # img1.draw.text((x1+x2)/2, (y1+y2)/2, comparisonResults2[j], font=font)
-        img = Image.alpha_composite(img, txt)
+    # LOG Transformation
+    # Scaling Moments with Log
+    for k in range(numberOfLabel):
+        for l in range(numberOfMoment):
+            if featureVectors[k][l] != 0:
+                featureVectors[k][l] = -np.sign(featureVectors[k][l]) * np.log10(np.abs(featureVectors[k][l]))
 
-    img.show()'''
+    mostRelevant = np.empty(shape=(numberOfLabel), dtype=int)
+    for i in range(numberOfLabel):
+        distances = np.empty(shape=(numberOfLabel,numberOfSource), dtype=np.double)
 
+        for j in range(numberOfSource):
+            filename = "Database/source" + type + str(j) + ".npy"
+            momentSource = np.load(filename)  # SOURCE LOAD
+            characterOfSource = momentSource.shape[0]
+            numberOfMoments = momentSource.shape[1]
+
+            #LOG Transformation
+            for k in range(characterOfSource):
+                for l in range(numberOfMoments):
+                    if momentSource[k][l] != 0:
+                        momentSource[k][l] = -np.sign(momentSource[k][l]) * np.log10(np.abs(momentSource[k][l]))
+
+            distance1 = sys.maxsize
+            for k in range(characterOfSource):
+                if type == "Hu":
+                    dis1 = pow(momentSource[k][0] - featureVectors[i][0], 2)
+                    dis2 = pow(momentSource[k][1] - featureVectors[i][1], 2)
+                    dis3 = pow(momentSource[k][2] - featureVectors[i][2], 2)
+                    dis4 = pow(momentSource[k][3] - featureVectors[i][3], 2)
+                    dis5 = pow(momentSource[k][4] - featureVectors[i][4], 2)
+                    dis6 = pow(momentSource[k][5] - featureVectors[i][5], 2)
+                    dis7 = pow(momentSource[k][6] - featureVectors[i][6], 2)
+
+                    totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis7
+                    totalDis = math.sqrt(totalDis)
+                    if totalDis < distance1:
+                        distance1=totalDis
+
+                if type == "R":
+                    dis1 = pow(momentSource[k][0] - featureVectors[i][0], 2)
+                    dis2 = pow(momentSource[k][1] - featureVectors[i][1], 2)
+                    dis3 = pow(momentSource[k][2] - featureVectors[i][2], 2)
+                    dis4 = pow(momentSource[k][3] - featureVectors[i][3], 2)
+                    dis5 = pow(momentSource[k][4] - featureVectors[i][4], 2)
+                    dis6 = pow(momentSource[k][5] - featureVectors[i][5], 2)
+                    dis7 = pow(momentSource[k][6] - featureVectors[i][6], 2)
+                    dis8 = pow(momentSource[k][7] - featureVectors[i][7], 2)
+                    dis9 = pow(momentSource[k][8] - featureVectors[i][8], 2)
+                    dis10 = pow(momentSource[k][9] - featureVectors[i][9], 2)
+
+                    totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis7 + dis8 + dis9 + dis10
+                    totalDis = math.sqrt(totalDis)
+                    if totalDis < distance1:
+                        distance1=totalDis
+
+                if type == "Zernike":
+                    dis1 = pow(momentSource[k][0] - featureVectors[i][0], 2)
+                    dis2 = pow(momentSource[k][1] - featureVectors[i][1], 2)
+                    dis3 = pow(momentSource[k][2] - featureVectors[i][2], 2)
+                    dis4 = pow(momentSource[k][3] - featureVectors[i][3], 2)
+                    dis5 = pow(momentSource[k][4] - featureVectors[i][4], 2)
+                    dis6 = pow(momentSource[k][5] - featureVectors[i][5], 2)
+                    dis7 = pow(momentSource[k][6] - featureVectors[i][6], 2)
+                    dis8 = pow(momentSource[k][7] - featureVectors[i][7], 2)
+                    dis9 = pow(momentSource[k][8] - featureVectors[i][8], 2)
+                    dis10 = pow(momentSource[k][9] - featureVectors[i][9], 2)
+                    dis11 = pow(momentSource[k][10] - featureVectors[i][10], 2)
+                    dis12 = pow(momentSource[k][11] - featureVectors[i][11], 2)
+
+                    totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis7 + dis8 + dis9 + dis10 + dis11 + dis12
+                    totalDis = math.sqrt(totalDis)
+                    if totalDis < distance1:
+                        distance1 = totalDis
+
+            distances[i][j] = distance1
+        mostRelevant[i] = alignment[np.argmin(distances[i])]
+    return mostRelevant
+
+def multipleComparison3(featureVectors,recAtt,type):
+    numberOfSource = 10
+    numberOfLabel = featureVectors.shape[0]
+    numberOfMoment = featureVectors.shape[1]
+    alignment = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+
+    # LOG Transformation
+    # Scaling Moments with Log
+    for k in range(numberOfLabel):
+        for l in range(numberOfMoment):
+            if featureVectors[k][l] != 0:
+                featureVectors[k][l] = -np.sign(featureVectors[k][l]) * np.log10(np.abs(featureVectors[k][l]))
+
+    mostRelevant = np.empty(shape=(numberOfLabel), dtype=int)
+    for i in range(numberOfLabel):
+        distances = np.empty(shape=(numberOfLabel,numberOfSource), dtype=np.double)
+
+        for j in range(numberOfSource):
+            filename = "Database/source" + type + str(j) + ".npy"
+            momentSource = np.load(filename)  # SOURCE LOAD
+            characterOfSource = momentSource.shape[0]
+            numberOfMoments = momentSource.shape[1]
+
+            #LOG Transformation
+            for k in range(characterOfSource):
+                for l in range(numberOfMoments):
+                    if momentSource[k][l] != 0:
+                        momentSource[k][l] = -np.sign(momentSource[k][l]) * np.log10(np.abs(momentSource[k][l]))
+
+            distance1 = sys.maxsize
+            for k in range(characterOfSource):
+                if type == "Hu":
+                    ratio1 = abs(((momentSource[k][0] - featureVectors[i][0]) / momentSource[j][0]) * 100)
+                    ratio2 = abs(((momentSource[k][1] - featureVectors[i][1]) / momentSource[j][1]) * 100)
+                    ratio3 = abs(((momentSource[k][2] - featureVectors[i][2]) / momentSource[j][2]) * 100)
+                    ratio4 = abs(((momentSource[k][3] - featureVectors[i][3]) / momentSource[j][3]) * 100)
+                    ratio5 = abs(((momentSource[k][4] - featureVectors[i][4]) / momentSource[j][4]) * 100)
+                    ratio6 = abs(((momentSource[k][5] - featureVectors[i][5]) / momentSource[j][5]) * 100)
+                    ratio7 = abs(((momentSource[k][6] - featureVectors[i][6]) / momentSource[j][6]) * 100)
+
+                    totalRatio = ratio1 + ratio2 + ratio3 + ratio4 + ratio5 + ratio6 + ratio7
+                    if totalRatio < distance1:
+                        distance1=totalRatio
+
+                if type == "R":
+                    ratio1 = abs(((momentSource[k][0] - featureVectors[i][0]) / momentSource[j][0]) * 100)
+                    ratio2 = abs(((momentSource[k][1] - featureVectors[i][1]) / momentSource[j][1]) * 100)
+                    ratio3 = abs(((momentSource[k][2] - featureVectors[i][2]) / momentSource[j][2]) * 100)
+                    ratio4 = abs(((momentSource[k][3] - featureVectors[i][3]) / momentSource[j][3]) * 100)
+                    ratio5 = abs(((momentSource[k][4] - featureVectors[i][4]) / momentSource[j][4]) * 100)
+                    ratio6 = abs(((momentSource[k][5] - featureVectors[i][5]) / momentSource[j][5]) * 100)
+                    ratio7 = abs(((momentSource[k][6] - featureVectors[i][6]) / momentSource[j][6]) * 100)
+                    ratio8 = abs(((momentSource[k][7] - featureVectors[i][7]) / momentSource[j][7]) * 100)
+                    ratio9 = abs(((momentSource[k][8] - featureVectors[i][8]) / momentSource[j][8]) * 100)
+                    ratio10 = abs(((momentSource[k][9] - featureVectors[i][9]) / momentSource[j][9]) * 100)
+
+                    totalRatio = ratio1 + ratio2 + ratio3 + ratio4 + ratio5 + ratio6 + ratio7 + ratio8 + ratio9 + ratio10
+                    if totalRatio < distance1:
+                        distance1 = totalRatio
+
+                if type == "Zernike":
+                    ratio1 = 0.0
+                    ratio2 = 0.0
+                    ratio3 = abs(((momentSource[k][2] - featureVectors[i][2]) / momentSource[j][2]) * 100)
+                    ratio4 = 0.0
+                    ratio5 = abs(((momentSource[k][4] - featureVectors[i][4]) / momentSource[j][4]) * 100)
+                    ratio6 = 0.0
+                    ratio7 = abs(((momentSource[k][6] - featureVectors[i][6]) / momentSource[j][6]) * 100)
+                    ratio8 = abs(((momentSource[k][7] - featureVectors[i][7]) / momentSource[j][7]) * 100)
+                    ratio9 = 0.0
+                    ratio10 = abs(((momentSource[k][9] - featureVectors[i][9]) / momentSource[j][9]) * 100)
+                    ratio11 = abs(((momentSource[k][10] - featureVectors[i][10]) / momentSource[j][10]) * 100)
+                    ratio12 = 0.0
+
+                    totalRatio = ratio1 + ratio2 + ratio3 + ratio4 + ratio5 + ratio6 + ratio7 + ratio8 + ratio9 + ratio10 + ratio11 + ratio12
+                    if totalRatio < distance1:
+                        distance1 = totalRatio
+
+            distances[i][j] = distance1
+        mostRelevant[i] = alignment[np.argmin(distances[i])]
+    return mostRelevant
 
 if __name__=='__main__':
     main()
