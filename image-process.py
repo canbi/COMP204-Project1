@@ -3,7 +3,7 @@ import numpy as np
 import sys
 import math
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, LEFT,RIGHT,TOP
 
 top = tk.Tk()                   # creates window
 top.geometry('600x300+400+300') #window width, height and starting position
@@ -675,7 +675,6 @@ def multiple_comparison2(feature_vectors, rec_att, type): #Comparison Method 2
             distances[i][j] = distance1 #Assign minimum distance
         most_relevant[i] = alignment[np.argmin(distances[i])] #Find minimum distance from every source
     return most_relevant
-
 
 def multiple_comparison3(feature_vectors, rec_att, type): #Comparison Method 3
     number_of_source = 10
