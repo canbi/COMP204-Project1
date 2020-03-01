@@ -3,7 +3,7 @@ import numpy as np
 import sys
 import math
 import tkinter as tk
-from tkinter import filedialog, messagebox, LEFT,RIGHT,TOP
+from tkinter import filedialog, messagebox
 
 top = tk.Tk()                   # creates window
 top.geometry('600x300+400+300') #window width, height and starting position
