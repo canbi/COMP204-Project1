@@ -5,54 +5,46 @@ import math
 import tkinter as tk
 from tkinter import filedialog, messagebox, LEFT,RIGHT,TOP
 
-top = tk.Tk()  # creates window
-top.geometry('600x300+400+300')
-top.title('Catch All ImageZ')
+top = tk.Tk()                   # creates window
+top.geometry('600x300+400+300') #window width, height and starting position
+top.title('Catch All ImageZ')   #window title
 filename= ''
 
 def main():
 
     global v
     global m
-    B = tk.Button(top, text="Select Image", command=ButtonEvent).place(x=50,y=50)
-    C = tk.Button(top, text="Find Characters", command=ButtonEvent2).place(x=410,y=250)
+    B = tk.Button(top, text="Select Image", command=ButtonEvent).place(x=50,y=50)           #Select Image Button
+    C = tk.Button(top, text="Find Characters", command=ButtonEvent2).place(x=410,y=250)     #Find Characters Button
 
     v = tk.IntVar()
     v.set(1)  # initializing the choice, i.e. Hu Moment
-    rad1= tk.Radiobutton(text='Hu Moment',variable=v,value=1).place(x=430,y=50)
-    rad2= tk.Radiobutton(text='R Moment',variable=v, value=2).place(x=430, y=80)
-    rad3= tk.Radiobutton(text='Zernike Moment',variable=v, value=3).place(x=430,y=110)
+    rad1= tk.Radiobutton(text='Hu Moment',variable=v,value=1).place(x=430,y=50)             #Hu Moment Button
+    rad2= tk.Radiobutton(text='R Moment',variable=v, value=2).place(x=430, y=80)            #R Moment Button
+    rad3= tk.Radiobutton(text='Zernike Moment',variable=v, value=3).place(x=430,y=110)      #Zernike Moment Button
 
     m = tk.IntVar()
     m.set(1)  # initializing the choice, i.e. First
-    rad4= tk.Radiobutton(text='Comparison Method 1',variable=m,value=1).place(x=400,y=160)
-    rad5= tk.Radiobutton(text='Comparison Method 2',variable=m,value=2).place(x=400,y=190)
-    rad6= tk.Radiobutton(text='Comparison Method 3',variable=m,value=3).place(x=400,y=220)
-
-
-
-    # button
-    #imageOperations(filename)
-
-
+    rad4= tk.Radiobutton(text='Comparison Method 1',variable=m,value=1).place(x=400,y=160)  #Comparison Method 1 Button
+    rad5= tk.Radiobutton(text='Comparison Method 2',variable=m,value=2).place(x=400,y=190)  #Comparison Method 2 Button
+    rad6= tk.Radiobutton(text='Comparison Method 3',variable=m,value=3).place(x=400,y=220)  #Comparison Method 3 Button
+    
     top.mainloop()
-
-
-
-    #img = Image.open('font1.png') #fotoğrafı açıyor
 
 def ButtonEvent():
 
 
-
    global img1
    global filename
+   #Opening Filedialog
    top.filename = filedialog.askopenfilename(initialdir="/", title="Select file",
                                              filetypes=(("png files", "*.png"),("jpeg files", "*.jpg"),("all files", "*.*")))
    filename = top.filename
    print(filename)
    image = Image.open(filename)
    width, height = image.size
+    
+   #Image fitting
    if width > height:
 
        if width > 370:
@@ -65,35 +57,34 @@ def ButtonEvent():
          height=180
          width *=coef
 
-   image = image.resize((round(width),round(height)), Image.ANTIALIAS)
-   img1 = ImageTk.PhotoImage(image)  # image
+   image = image.resize((round(width),round(height)), Image.ANTIALIAS) #Image resize
+   img1 = ImageTk.PhotoImage(image)  #image
 
    panel = tk.Label(top, image=img1).place(x=20,y=100)
-   #panel.pack(side="bottom", fill="both", expand="no")
-   #imageOperations(top.filename)
 
 def ButtonEvent2():
 
     try:
-        img = Image.open(filename)  # fotoğrafı açıyor
+        img = Image.open(filename)  #opening image
     except AttributeError:
         messagebox.showinfo( "Warning", "Please select image.")
-    img_gray = img.convert('L')  # converts the image to grayscale image
+    img_gray = img.convert('L')  #converts the image to grayscale image
 
     ONE = 255
-    a = np.asarray(img_gray)  # from PIL to np array
+    a = np.asarray(img_gray)                        # from PIL to np array
     a_bin = threshold(a, 100, ONE, 0)
-    im = Image.fromarray(a_bin)  # from np array to PIL format
-    label = blob_coloring_8_connected(a_bin, ONE)
+    im = Image.fromarray(a_bin)                     # from np array to PIL format
+    label = blob_coloring_8_connected(a_bin, ONE)   #finds label
     new_img2 = np2PIL_color(label)
-    labelDict = addDictLabelled(label)
-    recAtt = findRectangle(label, labelDict)
-    drawingRect(img, recAtt)
+    labelDict = addDictLabelled(label)              #stores labels into dictionary with their indexes
+    recAtt = findRectangle(label, labelDict)        #find coordinates of every labels
+    drawingRect(img, recAtt)                        #draws rectangle
     numberOfLabels = len(labelDict)
     type = ""
-    if v.get() == 1:
+    
+    if v.get() == 1: #Hu Moment
         type = "Hu"
-        numberOfMoments = 7  # HU İÇİN 7
+        numberOfMoments = 7  #There is 7 moment for Hu
         featureVectors = np.empty(shape=(numberOfLabels, numberOfMoments),
                                   dtype=np.double)  # FeatureVectors Array Initialization
         for i in range(numberOfLabels):
@@ -108,9 +99,9 @@ def ButtonEvent2():
             currentMoments = calcMomentsHu(resizedIm)  # calculates HU moments of character
             featureVectors[i] = currentMoments  # stores hu moments of character
 
-    if v.get() == 2:
+    if v.get() == 2: #R Moment
         type = "R"
-        numberOfMoments = 10  # R İÇİN
+        numberOfMoments = 10  #There is 10 moment for R
         featureVectors = np.empty(shape=(numberOfLabels, numberOfMoments),
                                   dtype=np.double)  # FeatureVectors Array Initialization
         for i in range(numberOfLabels):
@@ -125,9 +116,9 @@ def ButtonEvent2():
             currentMoments = calcMomentsR(resizedIm)  # calculates R moments of character
             featureVectors[i] = currentMoments  # stores R moments of character
 
-    if v.get() == 3:
+    if v.get() == 3: #Zernike Moment
         type = "Zernike"
-        numberOfMoments = 12
+        numberOfMoments = 12 #There is 12 moment for Zernike
         featureVectors = np.empty(shape=(numberOfLabels, numberOfMoments),
                                   dtype=np.double)  # FeatureVectors Array Initialization
 
@@ -140,18 +131,17 @@ def ButtonEvent2():
             resizedIm = resizeRec(im, minx, miny, maxx, maxy)  # crops and resizes every character
 
             # CALCULATION HU MOMENTS
-            currentMoments = calcMomentsZernike(resizedIm)  # calculates HU moments of character
-            featureVectors[i] = currentMoments  # stores hu moments of character
+            currentMoments = calcMomentsZernike(resizedIm)  # calculates Zernike moments of character
+            featureVectors[i] = currentMoments  # stores Zernike moments of character
 
-    # np.save('sourceZernike9',featureVectors) #SOURCE KAYIT
     results=0
-    if m.get() == 1:
+    if m.get() == 1: #Comparison Method 1
         results = multipleComparison(featureVectors, recAtt, type)
-    if m.get() == 2:
+    if m.get() == 2: #Comparison Method 2
         results = multipleComparison2(featureVectors, recAtt, type)
-    if m.get() == 3:
+    if m.get() == 3: #Comparison Method 3
         results = multipleComparison3(featureVectors, recAtt, type)
-    writeAssumptions(recAtt, img, results)
+    writeAssumptions(recAtt, img, results) #writes all estimations into image
 
 def np2PIL(im):
     img = Image.fromarray(im, 'RGB')
@@ -252,7 +242,7 @@ def blob_coloring_8_connected(bim, ONE):
 
     return color_im
 
-def rgbToHash(rgbArray):
+def rgbToHash(rgbArray): #creates a unique number from RGB values
     r = rgbArray[0]*1000000
     g = rgbArray[1]*1000
     b = rgbArray[2]
@@ -304,7 +294,7 @@ def addDictLabelled2(labelDict):
 
     return labelDict2
 
-def findRectangle(color_im, labelDict):
+def findRectangle(color_im, labelDict):  #Finds every label coordinates
     numberOfLabels = len(labelDict)
     recAtt = np.zeros(shape=(4, numberOfLabels))
 
@@ -335,7 +325,7 @@ def findRectangle(color_im, labelDict):
                     recAtt[3][currentIndex] = j
     return recAtt
 
-def drawingRect(img,recAtt):
+def drawingRect(img,recAtt):  #Draws rectange into image
     nrow = recAtt.shape[0]
     ncol = recAtt.shape[1]
 
@@ -346,13 +336,12 @@ def drawingRect(img,recAtt):
         img1 = ImageDraw.Draw(img)
         img1.rectangle(shape, outline="red", width=1)
 
-def resizeRec(im,minx,miny,maxx,maxy):
+def resizeRec(im,minx,miny,maxx,maxy): #crops and resizes every label
     im2 = im.crop((miny, minx, maxy, maxx))
     im3 = im2.resize((21, 21))
-    #im3.show()
     return im3
 
-def writeAssumptions(recAtt,img, results):
+def writeAssumptions(recAtt,img, results): #writes estimations into image
     nrow = recAtt.shape[0]
     ncol = recAtt.shape[1]
     for j in range(ncol):
@@ -369,7 +358,7 @@ def writeAssumptions(recAtt,img, results):
 
     img.show()
 
-def calcMomentsHu(resizedIm):
+def calcMomentsHu(resizedIm): #calculates hu moments for every resized label
     f = np.asarray(resizedIm)
     nrow = f.shape[0]
     ncol = f.shape[1]
@@ -418,7 +407,6 @@ def calcMomentsHu(resizedIm):
              (normalizedCentral[2][1] + normalizedCentral[0][3]), 2)) + \
          (4 * normalizedCentral[1][1]) * (normalizedCentral[3][0] + normalizedCentral[1][2]) * (
                      normalizedCentral[2][1] + normalizedCentral[0][3])
-    # Negative ???
     H7 = -(((3 * normalizedCentral[2][1]) - normalizedCentral[0][3]) * (
                 normalizedCentral[3][0] + normalizedCentral[1][2]) * \
            (pow((normalizedCentral[3][0] + normalizedCentral[1][2]), 2) - (
@@ -430,7 +418,7 @@ def calcMomentsHu(resizedIm):
 
     return [H1, H2, H3, H4, H5, H6, H7]
 
-def calcMomentsR(resizedIm):
+def calcMomentsR(resizedIm): #calculates R moments for every resized label
     huMoments = calcMomentsHu(resizedIm)
 
     r1 = math.sqrt(huMoments[1])/huMoments[0]
@@ -446,7 +434,7 @@ def calcMomentsR(resizedIm):
 
     return [r1,r2,r3,r4,r5,r6,r7,r8,r9,r10]
 
-def calcMomentsZernike(resizedIm):
+def calcMomentsZernike(resizedIm): #calculates Zernike moments for every resized label
     z11 = math.sqrt(pow(zernikeZRnm(resizedIm,1,1),2)+pow(zernikeZInm(resizedIm,1,1),2))
     z22 = math.sqrt(pow(zernikeZRnm(resizedIm,2,2),2)+pow(zernikeZInm(resizedIm,2,2),2))
     z31 = math.sqrt(pow(zernikeZRnm(resizedIm,3,1),2)+pow(zernikeZInm(resizedIm,3,1),2))
@@ -462,14 +450,14 @@ def calcMomentsZernike(resizedIm):
 
     return [z11,z22,z31,z33,z42,z44,z51,z53,z55,z62,z64,z66]
 
-def zernikeRnm(n,m,pij):
+def zernikeRnm(n,m,pij): #calculates Rnm for Zernike moment calculations
     rnm = 0
     for i in range(int((n-abs(m))/2)):
         rnm += (pow(-1,i)*pow(pij,(n-2*i))*math.factorial(n-i))/(math.factorial(i)*math.factorial(int(((n+abs(m))/2)-i))*math.factorial(int(((n-abs(m))/2))-i))
 
     return rnm
 
-def zernikeZRnm(resizedIm, n, m):
+def zernikeZRnm(resizedIm, n, m): #calculates ZRnm for Zernike moment calculations
     f = np.asarray(resizedIm)
     nrow = f.shape[0]
     ncol = f.shape[1]
@@ -491,7 +479,7 @@ def zernikeZRnm(resizedIm, n, m):
 
     return zr
 
-def zernikeZInm(resizedIm, n, m):
+def zernikeZInm(resizedIm, n, m): #calculates ZInm for Zernike moment calculations
     f = np.asarray(resizedIm)
     nrow = f.shape[0]
     ncol = f.shape[1]
@@ -512,7 +500,7 @@ def zernikeZInm(resizedIm, n, m):
 
     return zi
 
-def multipleComparison(featureVectors,recAtt,type):
+def multipleComparison(featureVectors,recAtt,type): #Comparison Method 1
     numberOfSource = 10
     numberOfLabel = featureVectors.shape[0]
     numberOfMoment = featureVectors.shape[1]
@@ -545,6 +533,7 @@ def multipleComparison(featureVectors,recAtt,type):
 
             for k in range(characterOfSource):
                 if type == "Hu":
+                    #Distance Calculation
                     dis1 = pow(momentSource[k][0] - featureVectors[i][0], 2)
                     dis2 = pow(momentSource[k][1] - featureVectors[i][1], 2)
                     dis3 = pow(momentSource[k][2] - featureVectors[i][2], 2)
@@ -558,6 +547,7 @@ def multipleComparison(featureVectors,recAtt,type):
                     distances0[k] = totalDis
 
                 if type == "R":
+                    #Distance Calculation
                     dis1 = pow(momentSource[k][0] - featureVectors[i][0], 2)
                     dis2 = pow(momentSource[k][1] - featureVectors[i][1], 2)
                     dis3 = pow(momentSource[k][2] - featureVectors[i][2], 2)
@@ -575,6 +565,7 @@ def multipleComparison(featureVectors,recAtt,type):
 
 
                 if type == "Zernike":
+                    #Distance Calculation
                     dis1 = pow(momentSource[k][0] - featureVectors[i][0], 2)
                     dis2 = pow(momentSource[k][1] - featureVectors[i][1], 2)
                     dis3 = pow(momentSource[k][2] - featureVectors[i][2], 2)
@@ -592,11 +583,11 @@ def multipleComparison(featureVectors,recAtt,type):
                     totalDis = math.sqrt(totalDis)
                     distances0[k] = totalDis
 
-            distances[i][j] = sum(distances0)/len(distances0)
-        mostRelevant[i] = alignment[np.argmin(distances[i])]
+            distances[i][j] = sum(distances0)/len(distances0) #Average calculation for every source
+        mostRelevant[i] = alignment[np.argmin(distances[i])] #Takes minumum average to find prediction for every label
     return mostRelevant
 
-def multipleComparison2(featureVectors,recAtt,type):
+def multipleComparison2(featureVectors,recAtt,type): #Comparison Method 2
     numberOfSource = 10
     numberOfLabel = featureVectors.shape[0]
     numberOfMoment = featureVectors.shape[1]
@@ -628,6 +619,7 @@ def multipleComparison2(featureVectors,recAtt,type):
             distance1 = sys.maxsize
             for k in range(characterOfSource):
                 if type == "Hu":
+                    #Distance Calculation
                     dis1 = pow(momentSource[k][0] - featureVectors[i][0], 2)
                     dis2 = pow(momentSource[k][1] - featureVectors[i][1], 2)
                     dis3 = pow(momentSource[k][2] - featureVectors[i][2], 2)
@@ -638,10 +630,11 @@ def multipleComparison2(featureVectors,recAtt,type):
 
                     totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis7
                     totalDis = math.sqrt(totalDis)
-                    if totalDis < distance1:
+                    if totalDis < distance1: #Find minimum distance
                         distance1=totalDis
 
                 if type == "R":
+                    #Distance Calculation
                     dis1 = pow(momentSource[k][0] - featureVectors[i][0], 2)
                     dis2 = pow(momentSource[k][1] - featureVectors[i][1], 2)
                     dis3 = pow(momentSource[k][2] - featureVectors[i][2], 2)
@@ -655,10 +648,11 @@ def multipleComparison2(featureVectors,recAtt,type):
 
                     totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis7 + dis8 + dis9 + dis10
                     totalDis = math.sqrt(totalDis)
-                    if totalDis < distance1:
+                    if totalDis < distance1: #Find minimum distance
                         distance1=totalDis
 
                 if type == "Zernike":
+                    #Distance Calculation
                     dis1 = pow(momentSource[k][0] - featureVectors[i][0], 2)
                     dis2 = pow(momentSource[k][1] - featureVectors[i][1], 2)
                     dis3 = pow(momentSource[k][2] - featureVectors[i][2], 2)
@@ -674,14 +668,14 @@ def multipleComparison2(featureVectors,recAtt,type):
 
                     totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis7 + dis8 + dis9 + dis10 + dis11 + dis12
                     totalDis = math.sqrt(totalDis)
-                    if totalDis < distance1:
+                    if totalDis < distance1: #Find minimum distance
                         distance1 = totalDis
 
-            distances[i][j] = distance1
-        mostRelevant[i] = alignment[np.argmin(distances[i])]
+            distances[i][j] = distance1 #Assign minimum distance
+        mostRelevant[i] = alignment[np.argmin(distances[i])] #Find minimum distance from every source
     return mostRelevant
 
-def multipleComparison3(featureVectors,recAtt,type):
+def multipleComparison3(featureVectors,recAtt,type): #Comparison Method 3
     numberOfSource = 10
     numberOfLabel = featureVectors.shape[0]
     numberOfMoment = featureVectors.shape[1]
@@ -713,6 +707,7 @@ def multipleComparison3(featureVectors,recAtt,type):
             distance1 = sys.maxsize
             for k in range(characterOfSource):
                 if type == "Hu":
+                    #Ratio calculation
                     ratio1 = abs(((momentSource[k][0] - featureVectors[i][0]) / momentSource[j][0]) * 100)
                     ratio2 = abs(((momentSource[k][1] - featureVectors[i][1]) / momentSource[j][1]) * 100)
                     ratio3 = abs(((momentSource[k][2] - featureVectors[i][2]) / momentSource[j][2]) * 100)
@@ -722,10 +717,11 @@ def multipleComparison3(featureVectors,recAtt,type):
                     ratio7 = abs(((momentSource[k][6] - featureVectors[i][6]) / momentSource[j][6]) * 100)
 
                     totalRatio = ratio1 + ratio2 + ratio3 + ratio4 + ratio5 + ratio6 + ratio7
-                    if totalRatio < distance1:
+                    if totalRatio < distance1: #Find minimum ratio
                         distance1=totalRatio
 
                 if type == "R":
+                    #Ratio calculation
                     ratio1 = abs(((momentSource[k][0] - featureVectors[i][0]) / momentSource[j][0]) * 100)
                     ratio2 = abs(((momentSource[k][1] - featureVectors[i][1]) / momentSource[j][1]) * 100)
                     ratio3 = abs(((momentSource[k][2] - featureVectors[i][2]) / momentSource[j][2]) * 100)
@@ -738,25 +734,26 @@ def multipleComparison3(featureVectors,recAtt,type):
                     ratio10 = abs(((momentSource[k][9] - featureVectors[i][9]) / momentSource[j][9]) * 100)
 
                     totalRatio = ratio1 + ratio2 + ratio3 + ratio4 + ratio5 + ratio6 + ratio7 + ratio8 + ratio9 + ratio10
-                    if totalRatio < distance1:
+                    if totalRatio < distance1:#Find minimum ratio
                         distance1 = totalRatio
 
                 if type == "Zernike":
-                    ratio1 = 0.0
-                    ratio2 = 0.0
+                    #Ratio calculation
+                    ratio1 = 0.0 #Zero according to Zernike Moment
+                    ratio2 = 0.0 #Zero according to Zernike Moment
                     ratio3 = abs(((momentSource[k][2] - featureVectors[i][2]) / momentSource[j][2]) * 100)
-                    ratio4 = 0.0
+                    ratio4 = 0.0 #Zero according to Zernike Moment
                     ratio5 = abs(((momentSource[k][4] - featureVectors[i][4]) / momentSource[j][4]) * 100)
-                    ratio6 = 0.0
+                    ratio6 = 0.0 #Zero according to Zernike Moment
                     ratio7 = abs(((momentSource[k][6] - featureVectors[i][6]) / momentSource[j][6]) * 100)
                     ratio8 = abs(((momentSource[k][7] - featureVectors[i][7]) / momentSource[j][7]) * 100)
-                    ratio9 = 0.0
+                    ratio9 = 0.0 #Zero according to Zernike Moment
                     ratio10 = abs(((momentSource[k][9] - featureVectors[i][9]) / momentSource[j][9]) * 100)
                     ratio11 = abs(((momentSource[k][10] - featureVectors[i][10]) / momentSource[j][10]) * 100)
-                    ratio12 = 0.0
+                    ratio12 = 0.0 #Zero according to Zernike Moment
 
                     totalRatio = ratio1 + ratio2 + ratio3 + ratio4 + ratio5 + ratio6 + ratio7 + ratio8 + ratio9 + ratio10 + ratio11 + ratio12
-                    if totalRatio < distance1:
+                    if totalRatio < distance1:#Find minimum ratio
                         distance1 = totalRatio
 
             distances[i][j] = distance1
