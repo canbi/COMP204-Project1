@@ -14,20 +14,20 @@ def main():
 
     global v
     global m
-    B = tk.Button(top, text="Select Image", command=ButtonEvent).place(x=50,y=50)           #Select Image Button
-    C = tk.Button(top, text="Find Characters", command=ButtonEvent2).place(x=410,y=250)     #Find Characters Button
+    select_image_but = tk.Button(top, text="Select Image", command=ButtonEvent).place(x=50,y=50)           #Select Image Button
+    find_char_but = tk.Button(top, text="Find Characters", command=ButtonEvent2).place(x=410,y=250)     #Find Characters Button
 
     v = tk.IntVar()
     v.set(1)  # initializing the choice, i.e. Hu Moment
-    rad1= tk.Radiobutton(text='Hu Moment',variable=v,value=1).place(x=430,y=50)             #Hu Moment Button
-    rad2= tk.Radiobutton(text='R Moment',variable=v, value=2).place(x=430, y=80)            #R Moment Button
-    rad3= tk.Radiobutton(text='Zernike Moment',variable=v, value=3).place(x=430,y=110)      #Zernike Moment Button
+    radio1= tk.Radiobutton(text='Hu Moment',variable=v,value=1).place(x=430,y=50)             #Hu Moment Button
+    radio2= tk.Radiobutton(text='R Moment',variable=v, value=2).place(x=430, y=80)            #R Moment Button
+    radio3= tk.Radiobutton(text='Zernike Moment',variable=v, value=3).place(x=430,y=110)      #Zernike Moment Button
 
     m = tk.IntVar()
     m.set(1)  # initializing the choice, i.e. First
-    rad4= tk.Radiobutton(text='Comparison Method 1',variable=m,value=1).place(x=400,y=160)  #Comparison Method 1 Button
-    rad5= tk.Radiobutton(text='Comparison Method 2',variable=m,value=2).place(x=400,y=190)  #Comparison Method 2 Button
-    rad6= tk.Radiobutton(text='Comparison Method 3',variable=m,value=3).place(x=400,y=220)  #Comparison Method 3 Button
+    radio4= tk.Radiobutton(text='Comparison Method 1',variable=m,value=1).place(x=400,y=160)  #Comparison Method 1 Button
+    radio5= tk.Radiobutton(text='Comparison Method 2',variable=m,value=2).place(x=400,y=190)  #Comparison Method 2 Button
+    radio6= tk.Radiobutton(text='Comparison Method 3',variable=m,value=3).place(x=400,y=220)  #Comparison Method 3 Button
     
     top.mainloop()
 
@@ -76,9 +76,9 @@ def ButtonEvent2():
     im = Image.fromarray(a_bin)                     # from np array to PIL format
     label = blob_coloring_8_connected(a_bin, ONE)   #finds label
     new_img2 = np2PIL_color(label)
-    labelDict = addDictLabelled(label)              #stores labels into dictionary with their indexes
-    recAtt = findRectangle(label, labelDict)        #find coordinates of every labels
-    drawingRect(img, recAtt)                        #draws rectangle
+    labelDict = add_dict_labelled(label)              #stores labels into dictionary with their indexes
+    recAtt = find_rectangle(label, labelDict)        #find coordinates of every labels
+    drawing_rect(img, recAtt)                        #draws rectangle
     numberOfLabels = len(labelDict)
     type = ""
     
@@ -93,10 +93,10 @@ def ButtonEvent2():
             maxx = recAtt[2][i]
             maxy = recAtt[3][i]
 
-            resizedIm = resizeRec(im, minx, miny, maxx, maxy)  # crops and resizes every character
+            resizedIm = resize_rec(im, minx, miny, maxx, maxy)  # crops and resizes every character
 
             # CALCULATION HU MOMENTS
-            currentMoments = calcMomentsHu(resizedIm)  # calculates HU moments of character
+            currentMoments = calc_moments_hu(resizedIm)  # calculates HU moments of character
             featureVectors[i] = currentMoments  # stores hu moments of character
 
     if v.get() == 2: #R Moment
@@ -110,10 +110,10 @@ def ButtonEvent2():
             maxx = recAtt[2][i]
             maxy = recAtt[3][i]
 
-            resizedIm = resizeRec(im, minx, miny, maxx, maxy)  # crops and resizes every character
+            resizedIm = resize_rec(im, minx, miny, maxx, maxy)  # crops and resizes every character
 
             # CALCULATION HU MOMENTS
-            currentMoments = calcMomentsR(resizedIm)  # calculates R moments of character
+            currentMoments = calc_moments_r(resizedIm)  # calculates R moments of character
             featureVectors[i] = currentMoments  # stores R moments of character
 
     if v.get() == 3: #Zernike Moment
@@ -128,20 +128,20 @@ def ButtonEvent2():
             maxx = recAtt[2][i]
             maxy = recAtt[3][i]
 
-            resizedIm = resizeRec(im, minx, miny, maxx, maxy)  # crops and resizes every character
+            resizedIm = resize_rec(im, minx, miny, maxx, maxy)  # crops and resizes every character
 
             # CALCULATION HU MOMENTS
-            currentMoments = calcMomentsZernike(resizedIm)  # calculates Zernike moments of character
+            currentMoments = calc_moments_zernike(resizedIm)  # calculates Zernike moments of character
             featureVectors[i] = currentMoments  # stores Zernike moments of character
 
     results=0
     if m.get() == 1: #Comparison Method 1
-        results = multipleComparison(featureVectors, recAtt, type)
+        results = multiple_comparison(featureVectors, recAtt, type)
     if m.get() == 2: #Comparison Method 2
-        results = multipleComparison2(featureVectors, recAtt, type)
+        results = multiple_comparison2(featureVectors, recAtt, type)
     if m.get() == 3: #Comparison Method 3
-        results = multipleComparison3(featureVectors, recAtt, type)
-    writeAssumptions(recAtt, img, results) #writes all estimations into image
+        results = multiple_comparison3(featureVectors, recAtt, type)
+    write_assumptions(recAtt, img, results) #writes all estimations into image
 
 def np2PIL(im):
     img = Image.fromarray(im, 'RGB')
@@ -242,10 +242,10 @@ def blob_coloring_8_connected(bim, ONE):
 
     return color_im
 
-def rgbToHash(rgbArray): #creates a unique number from RGB values
-    r = rgbArray[0]*1000000
-    g = rgbArray[1]*1000
-    b = rgbArray[2]
+def rgb_to_hash(rgb_array): #creates a unique number from RGB values
+    r = rgb_array[0] * 1000000
+    g = rgb_array[1] * 1000
+    b = rgb_array[2]
 
     return r+g+b
 
@@ -272,7 +272,7 @@ def update_array(a, label1, label2) :
 
     return
 
-def addDictLabelled(color_im):
+def add_dict_labelled(color_im):
     nrow = color_im.shape[0]
     ncol = color_im.shape[1]
 
@@ -280,75 +280,76 @@ def addDictLabelled(color_im):
     for i in range(nrow):
         for j in range(ncol):
             if color_im[i][j][0] != 0 and color_im[i][j][1] != 0 and color_im[i][j][2] != 0:
-                labelDict[rgbToHash(color_im[i][j])] = [i,j]
+                labelDict[rgb_to_hash(color_im[i][j])] = [i, j]
 
-    labelDict = addDictLabelled2(labelDict)
+    labelDict = add_dict_labelled2(labelDict)
     return labelDict
 
-def addDictLabelled2(labelDict):
-    labelDict2 = {}
-    numberOfLabels = 0
-    for i in labelDict:
-        labelDict2[i] = numberOfLabels
-        numberOfLabels += 1
+def add_dict_labelled2(label_dict):
+    label_dict2 = {}
+    number_of_labels = 0
+    for i in label_dict:
+        label_dict2[i] = number_of_labels
+        number_of_labels += 1
 
-    return labelDict2
+    return label_dict2
 
-def findRectangle(color_im, labelDict):  #Finds every label coordinates
-    numberOfLabels = len(labelDict)
-    recAtt = np.zeros(shape=(4, numberOfLabels))
+
+def find_rectangle(color_im, label_dict):  #Finds every label coordinates
+    number_of_labels = len(label_dict)
+    rec_att = np.zeros(shape=(4, number_of_labels))
 
     nrow = color_im.shape[0]
     ncol = color_im.shape[1]
 
-    for t in range(numberOfLabels):
-        recAtt[0][t]=10000
-        recAtt[1][t]=10000
+    for t in range(number_of_labels):
+        rec_att[0][t]=10000
+        rec_att[1][t]=10000
 
     for i in range(nrow):
         for j in range(ncol):
             if color_im[i][j][0] != 0 and color_im[i][j][1] != 0 and color_im[i][j][2] != 0:
-                current = rgbToHash(color_im[i][j])
-                currentIndex = labelDict[current]
+                current = rgb_to_hash(color_im[i][j])
+                currentIndex = label_dict[current]
 
                 #min i
-                if i < recAtt[0][currentIndex]:
-                    recAtt[0][currentIndex] = i
+                if i < rec_att[0][currentIndex]:
+                    rec_att[0][currentIndex] = i
                 #min j
-                if j < recAtt[1][currentIndex]:
-                    recAtt[1][currentIndex] = j
+                if j < rec_att[1][currentIndex]:
+                    rec_att[1][currentIndex] = j
                 #max i
-                if i > recAtt[2][currentIndex]:
-                    recAtt[2][currentIndex] = i
+                if i > rec_att[2][currentIndex]:
+                    rec_att[2][currentIndex] = i
                 #max j
-                if j > recAtt[3][currentIndex]:
-                    recAtt[3][currentIndex] = j
-    return recAtt
+                if j > rec_att[3][currentIndex]:
+                    rec_att[3][currentIndex] = j
+    return rec_att
 
-def drawingRect(img,recAtt):  #Draws rectange into image
-    nrow = recAtt.shape[0]
-    ncol = recAtt.shape[1]
+def drawing_rect(img, rec_att):  #Draws rectange into image
+    nrow = rec_att.shape[0]
+    ncol = rec_att.shape[1]
 
     for j in range(ncol):
         draw = ImageDraw.Draw(img)
-        shape = [(recAtt[3][j], recAtt[0][j]),(recAtt[1][j], recAtt[2][j])]
+        shape = [(rec_att[3][j], rec_att[0][j]), (rec_att[1][j], rec_att[2][j])]
         # create rectangle image
         img1 = ImageDraw.Draw(img)
         img1.rectangle(shape, outline="red", width=1)
 
-def resizeRec(im,minx,miny,maxx,maxy): #crops and resizes every label
-    im2 = im.crop((miny, minx, maxy, maxx))
+def resize_rec(im, min_x, min_y, max_x, max_y): #crops and resizes every label
+    im2 = im.crop((min_y, min_x, max_y, max_x))
     im3 = im2.resize((21, 21))
     return im3
 
-def writeAssumptions(recAtt,img, results): #writes estimations into image
-    nrow = recAtt.shape[0]
-    ncol = recAtt.shape[1]
+def write_assumptions(rec_att, img, results): #writes estimations into image
+    nrow = rec_att.shape[0]
+    ncol = rec_att.shape[1]
     for j in range(ncol):
-        x1 = recAtt[1][j]
-        y1 = recAtt[0][j]
-        x2 = recAtt[3][j]
-        y2 = recAtt[2][j]
+        x1 = rec_att[1][j]
+        y1 = rec_att[0][j]
+        x2 = rec_att[3][j]
+        y2 = rec_att[2][j]
         # create rectangle image
         txt = Image.new('RGBA', img.size, (255, 255, 255, 0))
         fnt = ImageFont.truetype('Pillow/Tests/fonts/FreeMono.ttf', 25)
@@ -358,107 +359,107 @@ def writeAssumptions(recAtt,img, results): #writes estimations into image
 
     img.show()
 
-def calcMomentsHu(resizedIm): #calculates hu moments for every resized label
-    f = np.asarray(resizedIm)
+def calc_moments_hu(resized_image): #calculates hu moments for every resized label
+    f = np.asarray(resized_image)
     nrow = f.shape[0]
     ncol = f.shape[1]
 
-    rawMoments = [[0, 0], [0, 0]]
+    raw_moments = [[0, 0], [0, 0]]
 
     for i in range(2):
         for j in range(2):
             for x in range(nrow):
                 for y in range(ncol):
-                    rawMoments[i][j] += pow(x, i) * pow(y, j) * f[x][y]
+                    raw_moments[i][j] += pow(x, i) * pow(y, j) * f[x][y]
 
-    centralMoments = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
-    xZero = rawMoments[1][0] / rawMoments[0][0]
-    yZero = rawMoments[0][1] / rawMoments[0][0]
+    central_moments = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
+    xZero = raw_moments[1][0] / raw_moments[0][0]
+    yZero = raw_moments[0][1] / raw_moments[0][0]
 
     for i in range(4):
         for j in range(4):
             for x in range(nrow):
                 for y in range(ncol):
-                    centralMoments[i][j] += pow(x - xZero, i) * pow(y - yZero, j) * f[x][y]
+                    central_moments[i][j] += pow(x - xZero, i) * pow(y - yZero, j) * f[x][y]
 
-    normalizedCentral = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
+    normalized_central = [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]
     for i in range(4):
         for j in range(4):
             for x in range(nrow):
                 for y in range(ncol):
-                    normalizedCentral[i][j] = centralMoments[i][j] / pow(centralMoments[0][0], (1 + ((i + j) / 2)))
+                    normalized_central[i][j] = central_moments[i][j] / pow(central_moments[0][0], (1 + ((i + j) / 2)))
 
-    H1 = normalizedCentral[2][0] + normalizedCentral[0][2]
-    H2 = pow((normalizedCentral[2][0] - normalizedCentral[0][2]), 2) + (4 * pow((normalizedCentral[1][1]), 2))
-    H3 = pow((normalizedCentral[3][0] - (3 * normalizedCentral[1][2])), 2) + pow(
-        ((3 * normalizedCentral[2][1]) - normalizedCentral[0][3]), 2)
-    H4 = pow((normalizedCentral[3][0] + normalizedCentral[1][2]), 2) + pow(
-        (normalizedCentral[2][1] + normalizedCentral[0][3]), 2)
-    H5 = (normalizedCentral[3][0] - (3 * normalizedCentral[1][2])) * (
-    (normalizedCentral[3][0] + normalizedCentral[1][2])) * \
-         ((pow((normalizedCentral[3][0] + normalizedCentral[1][2]), 2)) - (
-                     3 * (pow((normalizedCentral[2][1] + normalizedCentral[0][3]), 2)))) + \
-         ((3 * normalizedCentral[2][1]) - normalizedCentral[0][3]) * (
-                     normalizedCentral[2][1] + normalizedCentral[0][3]) * \
-         ((3 * (pow((normalizedCentral[3][0] + normalizedCentral[1][2]), 2))) - pow(
-             (normalizedCentral[2][1] + normalizedCentral[0][3]), 2))
-    H6 = (normalizedCentral[2][0] - normalizedCentral[0][2]) * \
-         (pow((normalizedCentral[3][0] + normalizedCentral[1][2]), 2) - pow(
-             (normalizedCentral[2][1] + normalizedCentral[0][3]), 2)) + \
-         (4 * normalizedCentral[1][1]) * (normalizedCentral[3][0] + normalizedCentral[1][2]) * (
-                     normalizedCentral[2][1] + normalizedCentral[0][3])
-    H7 = -(((3 * normalizedCentral[2][1]) - normalizedCentral[0][3]) * (
-                normalizedCentral[3][0] + normalizedCentral[1][2]) * \
-           (pow((normalizedCentral[3][0] + normalizedCentral[1][2]), 2) - (
-                       3 * pow(normalizedCentral[2][1] + normalizedCentral[0][3], 2))) - \
-           ((normalizedCentral[3][0] - (3 * normalizedCentral[1][2]))) * (
-                       normalizedCentral[2][1] + normalizedCentral[0][3]) * \
-           ((3 * pow((normalizedCentral[3][0] + normalizedCentral[1][2]), 2)) - (
-           (pow((normalizedCentral[2][1] + normalizedCentral[0][3]), 2)))))
+    H1 = normalized_central[2][0] + normalized_central[0][2]
+    H2 = pow((normalized_central[2][0] - normalized_central[0][2]), 2) + (4 * pow((normalized_central[1][1]), 2))
+    H3 = pow((normalized_central[3][0] - (3 * normalized_central[1][2])), 2) + pow(
+        ((3 * normalized_central[2][1]) - normalized_central[0][3]), 2)
+    H4 = pow((normalized_central[3][0] + normalized_central[1][2]), 2) + pow(
+        (normalized_central[2][1] + normalized_central[0][3]), 2)
+    H5 = (normalized_central[3][0] - (3 * normalized_central[1][2])) * (
+    (normalized_central[3][0] + normalized_central[1][2])) * \
+         ((pow((normalized_central[3][0] + normalized_central[1][2]), 2)) - (
+                     3 * (pow((normalized_central[2][1] + normalized_central[0][3]), 2)))) + \
+         ((3 * normalized_central[2][1]) - normalized_central[0][3]) * (
+                     normalized_central[2][1] + normalized_central[0][3]) * \
+         ((3 * (pow((normalized_central[3][0] + normalized_central[1][2]), 2))) - pow(
+             (normalized_central[2][1] + normalized_central[0][3]), 2))
+    H6 = (normalized_central[2][0] - normalized_central[0][2]) * \
+         (pow((normalized_central[3][0] + normalized_central[1][2]), 2) - pow(
+             (normalized_central[2][1] + normalized_central[0][3]), 2)) + \
+         (4 * normalized_central[1][1]) * (normalized_central[3][0] + normalized_central[1][2]) * (
+                     normalized_central[2][1] + normalized_central[0][3])
+    H7 = -(((3 * normalized_central[2][1]) - normalized_central[0][3]) * (
+                normalized_central[3][0] + normalized_central[1][2]) * \
+           (pow((normalized_central[3][0] + normalized_central[1][2]), 2) - (
+                       3 * pow(normalized_central[2][1] + normalized_central[0][3], 2))) - \
+           ((normalized_central[3][0] - (3 * normalized_central[1][2]))) * (
+                       normalized_central[2][1] + normalized_central[0][3]) * \
+           ((3 * pow((normalized_central[3][0] + normalized_central[1][2]), 2)) - (
+           (pow((normalized_central[2][1] + normalized_central[0][3]), 2)))))
 
     return [H1, H2, H3, H4, H5, H6, H7]
 
-def calcMomentsR(resizedIm): #calculates R moments for every resized label
-    huMoments = calcMomentsHu(resizedIm)
+def calc_moments_r(resized_image): #calculates R moments for every resized label
+    hu_moments = calc_moments_hu(resized_image)
 
-    r1 = math.sqrt(huMoments[1])/huMoments[0]
-    r2 = (huMoments[0] + math.sqrt(huMoments[1]))/(huMoments[0] - math.sqrt(huMoments[1]))
-    r3 = math.sqrt(huMoments[2])/math.sqrt(huMoments[3])
-    r4 = math.sqrt(huMoments[2])/math.sqrt(abs(huMoments[4]))
-    r5 = math.sqrt(huMoments[3])/math.sqrt(abs(huMoments[4]))
-    r6 = abs(huMoments[5])/(huMoments[0]*huMoments[2])
-    r7 = abs(huMoments[5])/(huMoments[0]*math.sqrt(abs(huMoments[4])))
-    r8 = abs(huMoments[5])/(huMoments[2]*math.sqrt(abs(huMoments[1])))
-    r9 = abs(huMoments[5])/math.sqrt(huMoments[1]*abs(huMoments[4]))
-    r10 = abs(huMoments[4])/(huMoments[2]*huMoments[3])
+    r1 = math.sqrt(hu_moments[1])/hu_moments[0]
+    r2 = (hu_moments[0] + math.sqrt(hu_moments[1]))/(hu_moments[0] - math.sqrt(hu_moments[1]))
+    r3 = math.sqrt(hu_moments[2])/math.sqrt(hu_moments[3])
+    r4 = math.sqrt(hu_moments[2])/math.sqrt(abs(hu_moments[4]))
+    r5 = math.sqrt(hu_moments[3])/math.sqrt(abs(hu_moments[4]))
+    r6 = abs(hu_moments[5])/(hu_moments[0]*hu_moments[2])
+    r7 = abs(hu_moments[5])/(hu_moments[0]*math.sqrt(abs(hu_moments[4])))
+    r8 = abs(hu_moments[5])/(hu_moments[2]*math.sqrt(abs(hu_moments[1])))
+    r9 = abs(hu_moments[5])/math.sqrt(hu_moments[1]*abs(hu_moments[4]))
+    r10 = abs(hu_moments[4])/(hu_moments[2]*hu_moments[3])
 
     return [r1,r2,r3,r4,r5,r6,r7,r8,r9,r10]
 
-def calcMomentsZernike(resizedIm): #calculates Zernike moments for every resized label
-    z11 = math.sqrt(pow(zernikeZRnm(resizedIm,1,1),2)+pow(zernikeZInm(resizedIm,1,1),2))
-    z22 = math.sqrt(pow(zernikeZRnm(resizedIm,2,2),2)+pow(zernikeZInm(resizedIm,2,2),2))
-    z31 = math.sqrt(pow(zernikeZRnm(resizedIm,3,1),2)+pow(zernikeZInm(resizedIm,3,1),2))
-    z33 = math.sqrt(pow(zernikeZRnm(resizedIm,3,3),2)+pow(zernikeZInm(resizedIm,3,3),2))
-    z42 = math.sqrt(pow(zernikeZRnm(resizedIm,4,2),2)+pow(zernikeZInm(resizedIm,4,2),2))
-    z44 = math.sqrt(pow(zernikeZRnm(resizedIm,4,4),2)+pow(zernikeZInm(resizedIm,4,4),2))
-    z51 = math.sqrt(pow(zernikeZRnm(resizedIm,5,1),2)+pow(zernikeZInm(resizedIm,5,1),2))
-    z53 = math.sqrt(pow(zernikeZRnm(resizedIm,5,3),2)+pow(zernikeZInm(resizedIm,5,3),2))
-    z55 = math.sqrt(pow(zernikeZRnm(resizedIm,5,5),2)+pow(zernikeZInm(resizedIm,5,5),2))
-    z62 = math.sqrt(pow(zernikeZRnm(resizedIm,6,3),2)+pow(zernikeZInm(resizedIm,6,2),2))
-    z64 = math.sqrt(pow(zernikeZRnm(resizedIm,6,4),2)+pow(zernikeZInm(resizedIm,6,4),2))
-    z66 = math.sqrt(pow(zernikeZRnm(resizedIm,6,6),2)+pow(zernikeZInm(resizedIm,6,6),2))
+def calc_moments_zernike(resized_image): #calculates Zernike moments for every resized label
+    z11 = math.sqrt(pow(zernike_ZRnm(resized_image, 1, 1), 2) + pow(zernike_ZInm(resized_image, 1, 1), 2))
+    z22 = math.sqrt(pow(zernike_ZRnm(resized_image, 2, 2), 2) + pow(zernike_ZInm(resized_image, 2, 2), 2))
+    z31 = math.sqrt(pow(zernike_ZRnm(resized_image, 3, 1), 2) + pow(zernike_ZInm(resized_image, 3, 1), 2))
+    z33 = math.sqrt(pow(zernike_ZRnm(resized_image, 3, 3), 2) + pow(zernike_ZInm(resized_image, 3, 3), 2))
+    z42 = math.sqrt(pow(zernike_ZRnm(resized_image, 4, 2), 2) + pow(zernike_ZInm(resized_image, 4, 2), 2))
+    z44 = math.sqrt(pow(zernike_ZRnm(resized_image, 4, 4), 2) + pow(zernike_ZInm(resized_image, 4, 4), 2))
+    z51 = math.sqrt(pow(zernike_ZRnm(resized_image, 5, 1), 2) + pow(zernike_ZInm(resized_image, 5, 1), 2))
+    z53 = math.sqrt(pow(zernike_ZRnm(resized_image, 5, 3), 2) + pow(zernike_ZInm(resized_image, 5, 3), 2))
+    z55 = math.sqrt(pow(zernike_ZRnm(resized_image, 5, 5), 2) + pow(zernike_ZInm(resized_image, 5, 5), 2))
+    z62 = math.sqrt(pow(zernike_ZRnm(resized_image, 6, 3), 2) + pow(zernike_ZInm(resized_image, 6, 2), 2))
+    z64 = math.sqrt(pow(zernike_ZRnm(resized_image, 6, 4), 2) + pow(zernike_ZInm(resized_image, 6, 4), 2))
+    z66 = math.sqrt(pow(zernike_ZRnm(resized_image, 6, 6), 2) + pow(zernike_ZInm(resized_image, 6, 6), 2))
 
     return [z11,z22,z31,z33,z42,z44,z51,z53,z55,z62,z64,z66]
 
-def zernikeRnm(n,m,pij): #calculates Rnm for Zernike moment calculations
+def zernike_rnm(n, m, pij): #calculates Rnm for Zernike moment calculations
     rnm = 0
     for i in range(int((n-abs(m))/2)):
         rnm += (pow(-1,i)*pow(pij,(n-2*i))*math.factorial(n-i))/(math.factorial(i)*math.factorial(int(((n+abs(m))/2)-i))*math.factorial(int(((n-abs(m))/2))-i))
 
     return rnm
 
-def zernikeZRnm(resizedIm, n, m): #calculates ZRnm for Zernike moment calculations
-    f = np.asarray(resizedIm)
+def zernike_ZRnm(resized_image, n, m): #calculates ZRnm for Zernike moment calculations
+    f = np.asarray(resized_image)
     nrow = f.shape[0]
     ncol = f.shape[1]
 
@@ -474,13 +475,13 @@ def zernikeZRnm(resizedIm, n, m): #calculates ZRnm for Zernike moment calculatio
             except ZeroDivisionError:
                 qij = 0
 
-            zr += f[i][j]*zernikeRnm(n,m,pij)*math.cos(m*qij)*pow(2/(nrow*math.sqrt(2)),2)
+            zr += f[i][j] * zernike_rnm(n, m, pij) * math.cos(m * qij) * pow(2 / (nrow * math.sqrt(2)), 2)
     zr *= (n+1)/math.pi
 
     return zr
 
-def zernikeZInm(resizedIm, n, m): #calculates ZInm for Zernike moment calculations
-    f = np.asarray(resizedIm)
+def zernike_ZInm(resized_image, n, m): #calculates ZInm for Zernike moment calculations
+    f = np.asarray(resized_image)
     nrow = f.shape[0]
     ncol = f.shape[1]
 
@@ -495,27 +496,27 @@ def zernikeZInm(resizedIm, n, m): #calculates ZInm for Zernike moment calculatio
                 qij = math.atan(yj/xi)
             except ZeroDivisionError:
                 qij = 0
-            zi += f[i][j]*zernikeRnm(n,m,pij)*math.sin(m*qij)*pow(2/(nrow*math.sqrt(2)),2)
+            zi += f[i][j] * zernike_rnm(n, m, pij) * math.sin(m * qij) * pow(2 / (nrow * math.sqrt(2)), 2)
     zi *= -(n+1)/math.pi
 
     return zi
 
-def multipleComparison(featureVectors,recAtt,type): #Comparison Method 1
+def multiple_comparison(feature_vectors, recAtt, type): #Comparison Method 1
     numberOfSource = 10
-    numberOfLabel = featureVectors.shape[0]
-    numberOfMoment = featureVectors.shape[1]
+    number_of_label = feature_vectors.shape[0]
+    number_of_moment = feature_vectors.shape[1]
     alignment = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
     # LOG Transformation
     # Scaling Moments with Log
-    for k in range(numberOfLabel):
-        for l in range(numberOfMoment):
-            if featureVectors[k][l] != 0:
-                featureVectors[k][l] = -np.sign(featureVectors[k][l]) * np.log10(np.abs(featureVectors[k][l]))
+    for k in range(number_of_label):
+        for l in range(number_of_moment):
+            if feature_vectors[k][l] != 0:
+                feature_vectors[k][l] = -np.sign(feature_vectors[k][l]) * np.log10(np.abs(feature_vectors[k][l]))
 
-    mostRelevant = np.empty(shape=(numberOfLabel), dtype=int)
-    for i in range(numberOfLabel):
-        distances = np.empty(shape=(numberOfLabel,numberOfSource), dtype=np.double)
+    most_relevant = np.empty(shape=(number_of_label), dtype=int)
+    for i in range(number_of_label):
+        distances = np.empty(shape=(number_of_label,numberOfSource), dtype=np.double)
 
         for j in range(numberOfSource):
             filename = "Database/source" + type + str(j) + ".npy"
@@ -534,13 +535,13 @@ def multipleComparison(featureVectors,recAtt,type): #Comparison Method 1
             for k in range(characterOfSource):
                 if type == "Hu":
                     #Distance Calculation
-                    dis1 = pow(momentSource[k][0] - featureVectors[i][0], 2)
-                    dis2 = pow(momentSource[k][1] - featureVectors[i][1], 2)
-                    dis3 = pow(momentSource[k][2] - featureVectors[i][2], 2)
-                    dis4 = pow(momentSource[k][3] - featureVectors[i][3], 2)
-                    dis5 = pow(momentSource[k][4] - featureVectors[i][4], 2)
-                    dis6 = pow(momentSource[k][5] - featureVectors[i][5], 2)
-                    dis7 = pow(momentSource[k][6] - featureVectors[i][6], 2)
+                    dis1 = pow(momentSource[k][0] - feature_vectors[i][0], 2)
+                    dis2 = pow(momentSource[k][1] - feature_vectors[i][1], 2)
+                    dis3 = pow(momentSource[k][2] - feature_vectors[i][2], 2)
+                    dis4 = pow(momentSource[k][3] - feature_vectors[i][3], 2)
+                    dis5 = pow(momentSource[k][4] - feature_vectors[i][4], 2)
+                    dis6 = pow(momentSource[k][5] - feature_vectors[i][5], 2)
+                    dis7 = pow(momentSource[k][6] - feature_vectors[i][6], 2)
 
                     totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis7
                     totalDis = math.sqrt(totalDis)
@@ -548,16 +549,16 @@ def multipleComparison(featureVectors,recAtt,type): #Comparison Method 1
 
                 if type == "R":
                     #Distance Calculation
-                    dis1 = pow(momentSource[k][0] - featureVectors[i][0], 2)
-                    dis2 = pow(momentSource[k][1] - featureVectors[i][1], 2)
-                    dis3 = pow(momentSource[k][2] - featureVectors[i][2], 2)
-                    dis4 = pow(momentSource[k][3] - featureVectors[i][3], 2)
-                    dis5 = pow(momentSource[k][4] - featureVectors[i][4], 2)
-                    dis6 = pow(momentSource[k][5] - featureVectors[i][5], 2)
-                    dis7 = pow(momentSource[k][6] - featureVectors[i][6], 2)
-                    dis8 = pow(momentSource[k][7] - featureVectors[i][7], 2)
-                    dis9 = pow(momentSource[k][8] - featureVectors[i][8], 2)
-                    dis10 = pow(momentSource[k][9] - featureVectors[i][9], 2)
+                    dis1 = pow(momentSource[k][0] - feature_vectors[i][0], 2)
+                    dis2 = pow(momentSource[k][1] - feature_vectors[i][1], 2)
+                    dis3 = pow(momentSource[k][2] - feature_vectors[i][2], 2)
+                    dis4 = pow(momentSource[k][3] - feature_vectors[i][3], 2)
+                    dis5 = pow(momentSource[k][4] - feature_vectors[i][4], 2)
+                    dis6 = pow(momentSource[k][5] - feature_vectors[i][5], 2)
+                    dis7 = pow(momentSource[k][6] - feature_vectors[i][6], 2)
+                    dis8 = pow(momentSource[k][7] - feature_vectors[i][7], 2)
+                    dis9 = pow(momentSource[k][8] - feature_vectors[i][8], 2)
+                    dis10 = pow(momentSource[k][9] - feature_vectors[i][9], 2)
 
                     totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis7 + dis8 + dis9 + dis10
                     totalDis = math.sqrt(totalDis)
@@ -566,45 +567,45 @@ def multipleComparison(featureVectors,recAtt,type): #Comparison Method 1
 
                 if type == "Zernike":
                     #Distance Calculation
-                    dis1 = pow(momentSource[k][0] - featureVectors[i][0], 2)
-                    dis2 = pow(momentSource[k][1] - featureVectors[i][1], 2)
-                    dis3 = pow(momentSource[k][2] - featureVectors[i][2], 2)
-                    dis4 = pow(momentSource[k][3] - featureVectors[i][3], 2)
-                    dis5 = pow(momentSource[k][4] - featureVectors[i][4], 2)
-                    dis6 = pow(momentSource[k][5] - featureVectors[i][5], 2)
-                    dis7 = pow(momentSource[k][6] - featureVectors[i][6], 2)
-                    dis8 = pow(momentSource[k][7] - featureVectors[i][7], 2)
-                    dis9 = pow(momentSource[k][8] - featureVectors[i][8], 2)
-                    dis10 = pow(momentSource[k][9] - featureVectors[i][9], 2)
-                    dis11 = pow(momentSource[k][10] - featureVectors[i][10], 2)
-                    dis12 = pow(momentSource[k][11] - featureVectors[i][11], 2)
+                    dis1 = pow(momentSource[k][0] - feature_vectors[i][0], 2)
+                    dis2 = pow(momentSource[k][1] - feature_vectors[i][1], 2)
+                    dis3 = pow(momentSource[k][2] - feature_vectors[i][2], 2)
+                    dis4 = pow(momentSource[k][3] - feature_vectors[i][3], 2)
+                    dis5 = pow(momentSource[k][4] - feature_vectors[i][4], 2)
+                    dis6 = pow(momentSource[k][5] - feature_vectors[i][5], 2)
+                    dis7 = pow(momentSource[k][6] - feature_vectors[i][6], 2)
+                    dis8 = pow(momentSource[k][7] - feature_vectors[i][7], 2)
+                    dis9 = pow(momentSource[k][8] - feature_vectors[i][8], 2)
+                    dis10 = pow(momentSource[k][9] - feature_vectors[i][9], 2)
+                    dis11 = pow(momentSource[k][10] - feature_vectors[i][10], 2)
+                    dis12 = pow(momentSource[k][11] - feature_vectors[i][11], 2)
 
                     totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis7 + dis8 + dis9 + dis10 + dis11 + dis12
                     totalDis = math.sqrt(totalDis)
                     distances0[k] = totalDis
 
             distances[i][j] = sum(distances0)/len(distances0) #Average calculation for every source
-        mostRelevant[i] = alignment[np.argmin(distances[i])] #Takes minumum average to find prediction for every label
-    return mostRelevant
+        most_relevant[i] = alignment[np.argmin(distances[i])] #Takes minumum average to find prediction for every label
+    return most_relevant
 
-def multipleComparison2(featureVectors,recAtt,type): #Comparison Method 2
-    numberOfSource = 10
-    numberOfLabel = featureVectors.shape[0]
-    numberOfMoment = featureVectors.shape[1]
+def multiple_comparison2(feature_vectors, rec_att, type): #Comparison Method 2
+    number_of_source = 10
+    number_of_label = feature_vectors.shape[0]
+    number_of_moment = feature_vectors.shape[1]
     alignment = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
     # LOG Transformation
     # Scaling Moments with Log
-    for k in range(numberOfLabel):
-        for l in range(numberOfMoment):
-            if featureVectors[k][l] != 0:
-                featureVectors[k][l] = -np.sign(featureVectors[k][l]) * np.log10(np.abs(featureVectors[k][l]))
+    for k in range(number_of_label):
+        for l in range(number_of_moment):
+            if feature_vectors[k][l] != 0:
+                feature_vectors[k][l] = -np.sign(feature_vectors[k][l]) * np.log10(np.abs(feature_vectors[k][l]))
 
-    mostRelevant = np.empty(shape=(numberOfLabel), dtype=int)
-    for i in range(numberOfLabel):
-        distances = np.empty(shape=(numberOfLabel,numberOfSource), dtype=np.double)
+    most_relevant = np.empty(shape=(number_of_label), dtype=int)
+    for i in range(number_of_label):
+        distances = np.empty(shape=(number_of_label,number_of_source), dtype=np.double)
 
-        for j in range(numberOfSource):
+        for j in range(number_of_source):
             filename = "Database/source" + type + str(j) + ".npy"
             momentSource = np.load(filename)  # SOURCE LOAD
             characterOfSource = momentSource.shape[0]
@@ -620,13 +621,13 @@ def multipleComparison2(featureVectors,recAtt,type): #Comparison Method 2
             for k in range(characterOfSource):
                 if type == "Hu":
                     #Distance Calculation
-                    dis1 = pow(momentSource[k][0] - featureVectors[i][0], 2)
-                    dis2 = pow(momentSource[k][1] - featureVectors[i][1], 2)
-                    dis3 = pow(momentSource[k][2] - featureVectors[i][2], 2)
-                    dis4 = pow(momentSource[k][3] - featureVectors[i][3], 2)
-                    dis5 = pow(momentSource[k][4] - featureVectors[i][4], 2)
-                    dis6 = pow(momentSource[k][5] - featureVectors[i][5], 2)
-                    dis7 = pow(momentSource[k][6] - featureVectors[i][6], 2)
+                    dis1 = pow(momentSource[k][0] - feature_vectors[i][0], 2)
+                    dis2 = pow(momentSource[k][1] - feature_vectors[i][1], 2)
+                    dis3 = pow(momentSource[k][2] - feature_vectors[i][2], 2)
+                    dis4 = pow(momentSource[k][3] - feature_vectors[i][3], 2)
+                    dis5 = pow(momentSource[k][4] - feature_vectors[i][4], 2)
+                    dis6 = pow(momentSource[k][5] - feature_vectors[i][5], 2)
+                    dis7 = pow(momentSource[k][6] - feature_vectors[i][6], 2)
 
                     totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis7
                     totalDis = math.sqrt(totalDis)
@@ -635,16 +636,16 @@ def multipleComparison2(featureVectors,recAtt,type): #Comparison Method 2
 
                 if type == "R":
                     #Distance Calculation
-                    dis1 = pow(momentSource[k][0] - featureVectors[i][0], 2)
-                    dis2 = pow(momentSource[k][1] - featureVectors[i][1], 2)
-                    dis3 = pow(momentSource[k][2] - featureVectors[i][2], 2)
-                    dis4 = pow(momentSource[k][3] - featureVectors[i][3], 2)
-                    dis5 = pow(momentSource[k][4] - featureVectors[i][4], 2)
-                    dis6 = pow(momentSource[k][5] - featureVectors[i][5], 2)
-                    dis7 = pow(momentSource[k][6] - featureVectors[i][6], 2)
-                    dis8 = pow(momentSource[k][7] - featureVectors[i][7], 2)
-                    dis9 = pow(momentSource[k][8] - featureVectors[i][8], 2)
-                    dis10 = pow(momentSource[k][9] - featureVectors[i][9], 2)
+                    dis1 = pow(momentSource[k][0] - feature_vectors[i][0], 2)
+                    dis2 = pow(momentSource[k][1] - feature_vectors[i][1], 2)
+                    dis3 = pow(momentSource[k][2] - feature_vectors[i][2], 2)
+                    dis4 = pow(momentSource[k][3] - feature_vectors[i][3], 2)
+                    dis5 = pow(momentSource[k][4] - feature_vectors[i][4], 2)
+                    dis6 = pow(momentSource[k][5] - feature_vectors[i][5], 2)
+                    dis7 = pow(momentSource[k][6] - feature_vectors[i][6], 2)
+                    dis8 = pow(momentSource[k][7] - feature_vectors[i][7], 2)
+                    dis9 = pow(momentSource[k][8] - feature_vectors[i][8], 2)
+                    dis10 = pow(momentSource[k][9] - feature_vectors[i][9], 2)
 
                     totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis7 + dis8 + dis9 + dis10
                     totalDis = math.sqrt(totalDis)
@@ -653,18 +654,18 @@ def multipleComparison2(featureVectors,recAtt,type): #Comparison Method 2
 
                 if type == "Zernike":
                     #Distance Calculation
-                    dis1 = pow(momentSource[k][0] - featureVectors[i][0], 2)
-                    dis2 = pow(momentSource[k][1] - featureVectors[i][1], 2)
-                    dis3 = pow(momentSource[k][2] - featureVectors[i][2], 2)
-                    dis4 = pow(momentSource[k][3] - featureVectors[i][3], 2)
-                    dis5 = pow(momentSource[k][4] - featureVectors[i][4], 2)
-                    dis6 = pow(momentSource[k][5] - featureVectors[i][5], 2)
-                    dis7 = pow(momentSource[k][6] - featureVectors[i][6], 2)
-                    dis8 = pow(momentSource[k][7] - featureVectors[i][7], 2)
-                    dis9 = pow(momentSource[k][8] - featureVectors[i][8], 2)
-                    dis10 = pow(momentSource[k][9] - featureVectors[i][9], 2)
-                    dis11 = pow(momentSource[k][10] - featureVectors[i][10], 2)
-                    dis12 = pow(momentSource[k][11] - featureVectors[i][11], 2)
+                    dis1 = pow(momentSource[k][0] - feature_vectors[i][0], 2)
+                    dis2 = pow(momentSource[k][1] - feature_vectors[i][1], 2)
+                    dis3 = pow(momentSource[k][2] - feature_vectors[i][2], 2)
+                    dis4 = pow(momentSource[k][3] - feature_vectors[i][3], 2)
+                    dis5 = pow(momentSource[k][4] - feature_vectors[i][4], 2)
+                    dis6 = pow(momentSource[k][5] - feature_vectors[i][5], 2)
+                    dis7 = pow(momentSource[k][6] - feature_vectors[i][6], 2)
+                    dis8 = pow(momentSource[k][7] - feature_vectors[i][7], 2)
+                    dis9 = pow(momentSource[k][8] - feature_vectors[i][8], 2)
+                    dis10 = pow(momentSource[k][9] - feature_vectors[i][9], 2)
+                    dis11 = pow(momentSource[k][10] - feature_vectors[i][10], 2)
+                    dis12 = pow(momentSource[k][11] - feature_vectors[i][11], 2)
 
                     totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis7 + dis8 + dis9 + dis10 + dis11 + dis12
                     totalDis = math.sqrt(totalDis)
@@ -672,27 +673,28 @@ def multipleComparison2(featureVectors,recAtt,type): #Comparison Method 2
                         distance1 = totalDis
 
             distances[i][j] = distance1 #Assign minimum distance
-        mostRelevant[i] = alignment[np.argmin(distances[i])] #Find minimum distance from every source
-    return mostRelevant
+        most_relevant[i] = alignment[np.argmin(distances[i])] #Find minimum distance from every source
+    return most_relevant
 
-def multipleComparison3(featureVectors,recAtt,type): #Comparison Method 3
-    numberOfSource = 10
-    numberOfLabel = featureVectors.shape[0]
-    numberOfMoment = featureVectors.shape[1]
+
+def multiple_comparison3(feature_vectors, rec_att, type): #Comparison Method 3
+    number_of_source = 10
+    number_of_label = feature_vectors.shape[0]
+    number_of_moment = feature_vectors.shape[1]
     alignment = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
     # LOG Transformation
     # Scaling Moments with Log
-    for k in range(numberOfLabel):
-        for l in range(numberOfMoment):
-            if featureVectors[k][l] != 0:
-                featureVectors[k][l] = -np.sign(featureVectors[k][l]) * np.log10(np.abs(featureVectors[k][l]))
+    for k in range(number_of_label):
+        for l in range(number_of_moment):
+            if feature_vectors[k][l] != 0:
+                feature_vectors[k][l] = -np.sign(feature_vectors[k][l]) * np.log10(np.abs(feature_vectors[k][l]))
 
-    mostRelevant = np.empty(shape=(numberOfLabel), dtype=int)
-    for i in range(numberOfLabel):
-        distances = np.empty(shape=(numberOfLabel,numberOfSource), dtype=np.double)
+    most_relevant = np.empty(shape=(number_of_label), dtype=int)
+    for i in range(number_of_label):
+        distances = np.empty(shape=(number_of_label,number_of_source), dtype=np.double)
 
-        for j in range(numberOfSource):
+        for j in range(number_of_source):
             filename = "Database/source" + type + str(j) + ".npy"
             momentSource = np.load(filename)  # SOURCE LOAD
             characterOfSource = momentSource.shape[0]
@@ -708,13 +710,13 @@ def multipleComparison3(featureVectors,recAtt,type): #Comparison Method 3
             for k in range(characterOfSource):
                 if type == "Hu":
                     #Ratio calculation
-                    ratio1 = abs(((momentSource[k][0] - featureVectors[i][0]) / momentSource[j][0]) * 100)
-                    ratio2 = abs(((momentSource[k][1] - featureVectors[i][1]) / momentSource[j][1]) * 100)
-                    ratio3 = abs(((momentSource[k][2] - featureVectors[i][2]) / momentSource[j][2]) * 100)
-                    ratio4 = abs(((momentSource[k][3] - featureVectors[i][3]) / momentSource[j][3]) * 100)
-                    ratio5 = abs(((momentSource[k][4] - featureVectors[i][4]) / momentSource[j][4]) * 100)
-                    ratio6 = abs(((momentSource[k][5] - featureVectors[i][5]) / momentSource[j][5]) * 100)
-                    ratio7 = abs(((momentSource[k][6] - featureVectors[i][6]) / momentSource[j][6]) * 100)
+                    ratio1 = abs(((momentSource[k][0] - feature_vectors[i][0]) / momentSource[j][0]) * 100)
+                    ratio2 = abs(((momentSource[k][1] - feature_vectors[i][1]) / momentSource[j][1]) * 100)
+                    ratio3 = abs(((momentSource[k][2] - feature_vectors[i][2]) / momentSource[j][2]) * 100)
+                    ratio4 = abs(((momentSource[k][3] - feature_vectors[i][3]) / momentSource[j][3]) * 100)
+                    ratio5 = abs(((momentSource[k][4] - feature_vectors[i][4]) / momentSource[j][4]) * 100)
+                    ratio6 = abs(((momentSource[k][5] - feature_vectors[i][5]) / momentSource[j][5]) * 100)
+                    ratio7 = abs(((momentSource[k][6] - feature_vectors[i][6]) / momentSource[j][6]) * 100)
 
                     totalRatio = ratio1 + ratio2 + ratio3 + ratio4 + ratio5 + ratio6 + ratio7
                     if totalRatio < distance1: #Find minimum ratio
@@ -722,16 +724,16 @@ def multipleComparison3(featureVectors,recAtt,type): #Comparison Method 3
 
                 if type == "R":
                     #Ratio calculation
-                    ratio1 = abs(((momentSource[k][0] - featureVectors[i][0]) / momentSource[j][0]) * 100)
-                    ratio2 = abs(((momentSource[k][1] - featureVectors[i][1]) / momentSource[j][1]) * 100)
-                    ratio3 = abs(((momentSource[k][2] - featureVectors[i][2]) / momentSource[j][2]) * 100)
-                    ratio4 = abs(((momentSource[k][3] - featureVectors[i][3]) / momentSource[j][3]) * 100)
-                    ratio5 = abs(((momentSource[k][4] - featureVectors[i][4]) / momentSource[j][4]) * 100)
-                    ratio6 = abs(((momentSource[k][5] - featureVectors[i][5]) / momentSource[j][5]) * 100)
-                    ratio7 = abs(((momentSource[k][6] - featureVectors[i][6]) / momentSource[j][6]) * 100)
-                    ratio8 = abs(((momentSource[k][7] - featureVectors[i][7]) / momentSource[j][7]) * 100)
-                    ratio9 = abs(((momentSource[k][8] - featureVectors[i][8]) / momentSource[j][8]) * 100)
-                    ratio10 = abs(((momentSource[k][9] - featureVectors[i][9]) / momentSource[j][9]) * 100)
+                    ratio1 = abs(((momentSource[k][0] - feature_vectors[i][0]) / momentSource[j][0]) * 100)
+                    ratio2 = abs(((momentSource[k][1] - feature_vectors[i][1]) / momentSource[j][1]) * 100)
+                    ratio3 = abs(((momentSource[k][2] - feature_vectors[i][2]) / momentSource[j][2]) * 100)
+                    ratio4 = abs(((momentSource[k][3] - feature_vectors[i][3]) / momentSource[j][3]) * 100)
+                    ratio5 = abs(((momentSource[k][4] - feature_vectors[i][4]) / momentSource[j][4]) * 100)
+                    ratio6 = abs(((momentSource[k][5] - feature_vectors[i][5]) / momentSource[j][5]) * 100)
+                    ratio7 = abs(((momentSource[k][6] - feature_vectors[i][6]) / momentSource[j][6]) * 100)
+                    ratio8 = abs(((momentSource[k][7] - feature_vectors[i][7]) / momentSource[j][7]) * 100)
+                    ratio9 = abs(((momentSource[k][8] - feature_vectors[i][8]) / momentSource[j][8]) * 100)
+                    ratio10 = abs(((momentSource[k][9] - feature_vectors[i][9]) / momentSource[j][9]) * 100)
 
                     totalRatio = ratio1 + ratio2 + ratio3 + ratio4 + ratio5 + ratio6 + ratio7 + ratio8 + ratio9 + ratio10
                     if totalRatio < distance1:#Find minimum ratio
@@ -741,15 +743,15 @@ def multipleComparison3(featureVectors,recAtt,type): #Comparison Method 3
                     #Ratio calculation
                     ratio1 = 0.0 #Zero according to Zernike Moment
                     ratio2 = 0.0 #Zero according to Zernike Moment
-                    ratio3 = abs(((momentSource[k][2] - featureVectors[i][2]) / momentSource[j][2]) * 100)
+                    ratio3 = abs(((momentSource[k][2] - feature_vectors[i][2]) / momentSource[j][2]) * 100)
                     ratio4 = 0.0 #Zero according to Zernike Moment
-                    ratio5 = abs(((momentSource[k][4] - featureVectors[i][4]) / momentSource[j][4]) * 100)
+                    ratio5 = abs(((momentSource[k][4] - feature_vectors[i][4]) / momentSource[j][4]) * 100)
                     ratio6 = 0.0 #Zero according to Zernike Moment
-                    ratio7 = abs(((momentSource[k][6] - featureVectors[i][6]) / momentSource[j][6]) * 100)
-                    ratio8 = abs(((momentSource[k][7] - featureVectors[i][7]) / momentSource[j][7]) * 100)
+                    ratio7 = abs(((momentSource[k][6] - feature_vectors[i][6]) / momentSource[j][6]) * 100)
+                    ratio8 = abs(((momentSource[k][7] - feature_vectors[i][7]) / momentSource[j][7]) * 100)
                     ratio9 = 0.0 #Zero according to Zernike Moment
-                    ratio10 = abs(((momentSource[k][9] - featureVectors[i][9]) / momentSource[j][9]) * 100)
-                    ratio11 = abs(((momentSource[k][10] - featureVectors[i][10]) / momentSource[j][10]) * 100)
+                    ratio10 = abs(((momentSource[k][9] - feature_vectors[i][9]) / momentSource[j][9]) * 100)
+                    ratio11 = abs(((momentSource[k][10] - feature_vectors[i][10]) / momentSource[j][10]) * 100)
                     ratio12 = 0.0 #Zero according to Zernike Moment
 
                     totalRatio = ratio1 + ratio2 + ratio3 + ratio4 + ratio5 + ratio6 + ratio7 + ratio8 + ratio9 + ratio10 + ratio11 + ratio12
@@ -757,8 +759,8 @@ def multipleComparison3(featureVectors,recAtt,type): #Comparison Method 3
                         distance1 = totalRatio
 
             distances[i][j] = distance1
-        mostRelevant[i] = alignment[np.argmin(distances[i])]
-    return mostRelevant
+        most_relevant[i] = alignment[np.argmin(distances[i])]
+    return most_relevant
 
 if __name__=='__main__':
     main()
