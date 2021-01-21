@@ -37,7 +37,7 @@ def ButtonEvent():
    global img1
    global filename
    #Opening Filedialog
-   top.filename = filedialog.askopenfilename(initialdir="/", title="Select file",
+   top.filename = filedialog.askopenfilename(initialdir="/Desktop", title="Select file",
                                              filetypes=(("png files", "*.png"),("jpeg files", "*.jpg"),("all files", "*.*")))
    filename = top.filename
    print(filename)
@@ -79,6 +79,7 @@ def ButtonEvent2():
     labelDict = add_dict_labelled(label)              #stores labels into dictionary with their indexes
     recAtt = find_rectangle(label, labelDict)        #find coordinates of every labels
     drawing_rect(img, recAtt)                        #draws rectangle
+    img.show()
     numberOfLabels = len(labelDict)
     type = ""
     
@@ -352,7 +353,7 @@ def write_assumptions(rec_att, img, results): #writes estimations into image
         y2 = rec_att[2][j]
         # create rectangle image
         txt = Image.new('RGBA', img.size, (255, 255, 255, 0))
-        fnt = ImageFont.truetype('Pillow/Tests/fonts/FreeMono.ttf', 25)
+        fnt = ImageFont.truetype("arial.ttf", 28, encoding="unic")
         d = ImageDraw.Draw(txt)
         d.text(((x1 + x2 -15) / 2, y1-22), str(results[j]), font=fnt, fill=(0, 0, 0, 255))
         img = Image.alpha_composite(img, txt)
@@ -602,8 +603,11 @@ def multiple_comparison2(feature_vectors, rec_att, type): #Comparison Method 2
                 feature_vectors[k][l] = -np.sign(feature_vectors[k][l]) * np.log10(np.abs(feature_vectors[k][l]))
 
     most_relevant = np.empty(shape=(number_of_label), dtype=int)
+
     for i in range(number_of_label):
         distances = np.empty(shape=(number_of_label,number_of_source), dtype=np.double)
+        all_distance_data = np.full((number_of_source,number_of_source,30),1000,dtype=np.double)
+
 
         for j in range(number_of_source):
             filename = "Database/source" + type + str(j) + ".npy"
@@ -612,7 +616,7 @@ def multiple_comparison2(feature_vectors, rec_att, type): #Comparison Method 2
             numberOfMoments = momentSource.shape[1]
 
             #LOG Transformation
-            for k in range(characterOfSource):
+            for k in range(19):
                 for l in range(numberOfMoments):
                     if momentSource[k][l] != 0:
                         momentSource[k][l] = -np.sign(momentSource[k][l]) * np.log10(np.abs(momentSource[k][l]))
@@ -631,8 +635,8 @@ def multiple_comparison2(feature_vectors, rec_att, type): #Comparison Method 2
 
                     totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis7
                     totalDis = math.sqrt(totalDis)
-                    if totalDis < distance1: #Find minimum distance
-                        distance1=totalDis
+                    all_distance_data[i][j][k] = totalDis;
+
 
                 if type == "R":
                     #Distance Calculation
@@ -649,8 +653,7 @@ def multiple_comparison2(feature_vectors, rec_att, type): #Comparison Method 2
 
                     totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis7 + dis8 + dis9 + dis10
                     totalDis = math.sqrt(totalDis)
-                    if totalDis < distance1: #Find minimum distance
-                        distance1=totalDis
+                    all_distance_data[i][j][k] = totalDis;
 
                 if type == "Zernike":
                     #Distance Calculation
@@ -669,14 +672,52 @@ def multiple_comparison2(feature_vectors, rec_att, type): #Comparison Method 2
 
                     totalDis = dis1 + dis2 + dis3 + dis4 + dis5 + dis6 + dis7 + dis8 + dis9 + dis10 + dis11 + dis12
                     totalDis = math.sqrt(totalDis)
-                    if totalDis < distance1: #Find minimum distance
-                        distance1 = totalDis
+                    all_distance_data[i][j][k] = totalDis;
 
-            distances[i][j] = distance1 #Assign minimum distance
-        most_relevant[i] = alignment[np.argmin(distances[i])] #Find minimum distance from every source
+
+        knn_array = np.full(shape=9, fill_value=1000.0,dtype=np.double)
+        knn_array_info = np.full(shape=9, fill_value=-1)
+        sizeOfKnn = knn_array.shape[0]
+        print("num of label ", number_of_label)
+        print("num of source" , number_of_source)
+
+        for x in range(number_of_label):
+            for y in range(number_of_source):
+                for z in range(30):
+                    if all_distance_data[x][y][z] != -1:
+                        for t in range(sizeOfKnn):
+                            if all_distance_data[x][y][z] < knn_array[t]:
+                                tempValue = knn_array[t]
+                                tempInfo = knn_array_info[t]
+                                knn_array[t] = all_distance_data[x][y][z]
+                                knn_array_info[t] = y
+
+                                if t != sizeOfKnn-1:
+                                    for u in range(sizeOfKnn-t-2):
+                                        knn_array[sizeOfKnn-u-1] = knn_array[sizeOfKnn-u-2]
+                                        knn_array_info[sizeOfKnn-u-1] = knn_array_info[sizeOfKnn-u-2]
+                                    knn_array[t + 1] = tempValue
+                                    knn_array_info[t+1] = tempInfo
+                                break
+
+
+        howManyHit = np.zeros(shape=(10))
+        for p in range(sizeOfKnn):
+            howManyHit[knn_array_info[p]] = howManyHit[knn_array_info[p]] +1
+
+
+        #find maximum
+        maxNumber = howManyHit[0]
+        maxNumberIndex = 0;
+        for p in range(9):
+            if howManyHit[p+1]> maxNumber:
+                maxNumber = howManyHit[p+1]
+                maxNumberIndex = p+1
+
+        most_relevant[i] = maxNumberIndex
     return most_relevant
 
-def multiple_comparison3(feature_vectors, rec_att, type): #Comparison Method 3
+def multiple_comparison3(feature_vectors, rec_att, type):  #Comparison Method 3
     number_of_source = 10
     number_of_label = feature_vectors.shape[0]
     number_of_moment = feature_vectors.shape[1]
